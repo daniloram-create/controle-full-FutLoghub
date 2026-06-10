@@ -1316,7 +1316,7 @@ function render(){
     } else if(r.status === 'Separação Concluída') {
       bAcao = `<button title="Enviar para auditoria e conferência" style="background:#f57f17; color:#111" onclick="avancarEsteira(${r.originalIdx}, 'Em conferência')">🔍 Em conferência</button>`;
     } else if(r.status === 'Em conferência') {
-      bAcao = `<button title="Enviar para a doca de expedição" style="background:#33691e" onclick="avancarEsteira(${r.originalIdx}, 'Em Expedição')">.📦 Em Expedição</button>`;
+      bAcao = `<button title="Enviar para a doca de expedição" style="background:#33691e" onclick="avancarEsteira(${r.originalIdx}, 'Em Expedição')">. 📦 Em Expedição</button>`;
     } else if(r.status === 'Em Expedição') {
       if(r.destino === "Presidente Prudente") {
          bAcao = `<button title="Lote com destino Próprio: Finalizar direto como Coletado" style="background:#004d40" onclick="avancarEsteira(${r.originalIdx}, 'Coletado')">🚀 Coletado</button>`;
@@ -1360,8 +1360,8 @@ function render(){
       <td class="actions">
         ${bAcao}
         <div class="actions-adm">
-          <button class="btn-edit" title="Editar propriedades cadastrais" onclick="editar(${r.originalIdx})">✏️</button>
-          <button class="btn-del" title="Apagar permanentemente" onclick="excluir(${r.originalIdx})">🗑</button>
+          <button class="btn-edit" title="Editar propriedades cadastrais" onclick="editar(${r.originalIdx})">✏️Editar  </button>
+          <button class="btn-del" title="Apagar permanentemente" onclick="excluir(${r.originalIdx})">🗑Excluir </button>
         </div>
       </td>`;
     tbody.appendChild(tr);
