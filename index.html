@@ -78,6 +78,7 @@ th{background:#192C53;color:#fff;font-weight:600}
 .badge-transferencia {background:#ffcc80;color:#f57c00}
 .badge-hubsp {background:#c8e6c9;color:#2e7d32}
 .badge-coletado {background:#b2dfdb;color:#004d40}
+.badge-reagendada {background:#f8bbd0;color:#880e4f}
 
 .badge-sep-interna {display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:bold;}
 .badge-sep-externa {display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:bold;}
@@ -95,6 +96,7 @@ tr.status-expedicao {border-left:8px solid #33691e}
 tr.status-transferencia {border-left:8px solid #f57c00}
 tr.status-hubsp {border-left:8px solid #2e7d32}
 tr.status-coletado {border-left:8px solid #004d40}
+tr.status-reagendada {border-left:8px solid #880e4f}
 
 @keyframes piscarAlertaLateral {
   0% { border-left-color: #ef5350; }
@@ -186,6 +188,7 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
   <div class="card" data-filtro="Em transferência" onclick="setFiltro('Em transferência')"><h2 id="cTransp">0</h2><p>Em transferência</p></div>
   <div class="card" data-filtro="Recebidas HUB SP" onclick="setFiltro('Recebidas HUB SP')"><h2 id="cHubSp">0</h2><p>Recebidas HUB SP</p></div>
   <div class="card" data-filtro="Coletado" onclick="setFiltro('Coletado')"><h2 id="cCol">0</h2><p>Coletado</p></div>
+  <div class="card" data-filtro="Nota reagendada" onclick="setFiltro('Nota reagendada')"><h2 id="cReag">0</h2><p>Nota reagendada</p></div>
   <div class="card" data-filtro="alerta" onclick="setFiltro('alerta')" style="background:#fff5f5"><h2 id="cAtr" style="color:#c0392b">0</h2><p style="color:#c0392b">Em Alerta</p></div>
 </div>
 
@@ -272,6 +275,7 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
   <div class="legenda-item"><div class="legendas-cor" style="background:#f57c00"></div> Em transferência</div>
   <div class="legenda-item"><div class="legendas-cor" style="background:#b3f2b6"></div> Recebidas HUB SP</div>
   <div class="legenda-item"><div class="legendas-cor" style="background:#004d40"></div> Coletado</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#880e4f"></div> Nota Reagendada</div>
 </div>
 
 <footer>© 2026 Danilo Ramires. Propriedade intelectual do desenvolvedor. Uso autorizado à Operação FutFanatics.</footer>
@@ -422,6 +426,7 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
       <option value="Em transferência">Em transferência</option>
       <option value="Recebidas HUB SP">Recebidas HUB SP</option>
       <option value="Coletado">Coletado</option>
+      <option value="Nota reagendada">Nota reagendada</option>
     </select>
     
     <div style="margin-top:20px; display:flex; gap:10px; justify-content: flex-end;">
@@ -656,7 +661,7 @@ function efetuarLogin() {
     sessionStorage.setItem('setorLogado', USUARIOS_PERMITIDOS[u].setor);
     document.getElementById('loginOverlay').style.display = 'none';
     document.getElementById('mainContainer').style.display = 'block';
-    document.getElementById('userInfoHeader').textContent = `${u.toUpperCase()} [${USUARIOS_PERMITIDOS[u].setor}]`;
+    document.getElementById('userInfoHeader').textContent = `${u.toUpperCase()}`;
     
     if (USUARIOS_PERMITIDOS[u].setor === "Administrador") {
       document.getElementById('gearAdmin').style.display = 'block';
@@ -1001,10 +1006,20 @@ function salvarEdicaoModal(){
       r.nf = document.getElementById('modalNF').value.trim();
       r.transportadora = document.getElementById('modalTransp').value;
       r.destino = document.getElementById('modalDestino').value;
-      r.coleta = converterInputParaBR(document.getElementById('modalColeta').value);
+      
+      const novaDataColeta = converterInputParaBR(document.getElementById('modalColeta').value);
+      const statusSelecionado = document.getElementById('modalStatus').value;
+      
+      // Lógica de reagendamento: altera o status se a data for diferente da original
+      if (r.coleta && r.coleta !== "-" && r.coleta !== novaDataColeta) {
+          r.status = 'Nota reagendada';
+      } else {
+          r.status = statusSelecionado;
+      }
+      
+      r.coleta = novaDataColeta;
       r.embarque = converterInputParaBR(document.getElementById('modalEmbarque').value);
       r.embarque_full = converterInputParaBR(document.getElementById('modalEmbarqueFull').value);
-      r.status = document.getElementById('modalStatus').value; 
       r.usuario = getUsuarioAtual();
       r.ultima_movimentacao = agoraBR();
 
@@ -1154,7 +1169,7 @@ function obterRegistrosFiltrados() {
   const dInicio = document.getElementById('filtroDataInicio').value; 
   const dFim = document.getElementById('filtroDataFim').value;
 
-  return registros.map((reg, originalIdx) => ({ ...reg, originalIdx })).filter(r => {
+  let filtrados = registros.map((reg, originalIdx) => ({ ...reg, originalIdx })).filter(r => {
     const d = diasAteColeta(r.coleta);
     const emAlerta = r.status !== 'Coletado' && r.status !== 'Cancelado' && d <= 4;
     
@@ -1170,6 +1185,11 @@ function obterRegistrosFiltrados() {
     const blob = `${r.envio} ${r.nf} ${r.transportadora} ${r.destino} ${r.status} ${r.usuario} ${r.coleta}`.toLowerCase();
     return !(termo && !blob.includes(termo));
   });
+
+  // Ordena para que os agendamentos mais próximos (menor distância de dias) apareçam primeiro
+  filtrados.sort((a, b) => diasAteColeta(a.coleta) - diasAteColeta(b.coleta));
+
+  return filtrados;
 }
 
 // MAPEAMENTO COMPLETO DE DOWNLOAD CONTENDO AS 31 COLUNAS DA PLANILHA DO SHEETS
@@ -1235,7 +1255,7 @@ function irParaPagina(num) { paginaAtual = num; render(); }
 function render(){
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
-  let tot=0, pad=0, rea=0, can=0, apt=0, sep=0, sepconcl=0, con=0, exp=0, trans=0, hub=0, col=0, atr=0;
+  let tot=0, pad=0, rea=0, can=0, apt=0, sep=0, sepconcl=0, con=0, exp=0, trans=0, hub=0, col=0, atr=0, reag=0;
   
   registros.forEach(r => {
     tot++;
@@ -1252,6 +1272,7 @@ function render(){
     else if(r.status === 'Em transferência') trans++;
     else if(r.status === 'Recebidas HUB SP') hub++;
     else if(r.status === 'Coletado') col++;
+    else if(r.status === 'Nota reagendada') reag++;
   });
   
   document.getElementById('cTotal').textContent = tot;
@@ -1267,6 +1288,7 @@ function render(){
   document.getElementById('cHubSp').textContent = hub;
   document.getElementById('cCol').textContent   = col;
   document.getElementById('cAtr').textContent   = atr;
+  if (document.getElementById('cReag')) document.getElementById('cReag').textContent = reag;
 
   const filtrados = obterRegistrosFiltrados();
   const totalFiltrados = filtrados.length;
@@ -1290,6 +1312,7 @@ function render(){
     if(r.status === 'Em transferência') classeStatus = 'status-transferencia';
     if(r.status === 'Recebidas HUB SP') classeStatus = 'status-hubsp';
     if(r.status === 'Coletado') classeStatus = 'status-coletado';
+    if(r.status === 'Nota reagendada') classeStatus = 'status-reagendada';
     tr.className = classeStatus;
 
     if(r.status !== 'Coletado' && r.status !== 'Cancelado') {
@@ -1299,7 +1322,7 @@ function render(){
     }
 
     let bAcao = '';
-    if(r.status === 'A processar') {
+    if(r.status === 'A processar' || r.status === 'Nota reagendada') {
       bAcao = `
         <button title="Mudar status para Apta para Separação" style="background:#4a148c" onclick="avancarEsteira(${r.originalIdx}, 'Apta para separação')">✔️ Apta para separação</button>
         <button title="Colocar lote em espera por Reabastecimento" style="background:#0d47a1" onclick="avancarEsteira(${r.originalIdx}, 'Aguardando Reabastecimento')">⏳ Ag. Reabastecimento</button>
@@ -1340,6 +1363,7 @@ function render(){
     if(r.status === 'Em transferência') badgeStyle = 'badge-transferencia';
     if(r.status === 'Recebidas HUB SP') badgeStyle = 'badge-hubsp';
     if(r.status === 'Coletado') badgeStyle = 'badge-coletado';
+    if(r.status === 'Nota reagendada') badgeStyle = 'badge-reagendada';
     
     let cInt = r.sep_interna === 'Finalizada' ? 'sep-finalizada' : 'sep-pendente';
     let cExt = r.sep_externa === 'Finalizada' ? 'sep-finalizada' : 'sep-pendente';
