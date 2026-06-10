@@ -738,6 +738,42 @@ function cadastrarNovoUsuarioBD() {
   );
 }
 
+// ========== FUNÇÕES INSERIDAS PARA EDITAR E EXCLUIR USUÁRIOS ========== //
+
+function alterarSenhaUsuarioBD(user) {
+  const novaSenha = prompt(`Digite a nova senha para o usuário ${user.toUpperCase()}:`);
+  
+  // Cancela se o usuário clicar em Cancelar ou deixar em branco
+  if (novaSenha === null || novaSenha.trim() === "") return;
+  
+  perguntarConfirmacao(
+    "✏️ Alterar Senha",
+    `Confirma a alteração de senha do usuário <b>${user.toUpperCase()}</b>?`,
+    () => {
+      USUARIOS_PERMITIDOS[user].senha = novaSenha.trim();
+      // Envia os dados para a planilha usando a mesma ação de salvar usuário para atualizar
+      enviarParaGoogleSheets({ novoUsuario: user, novaSenha: novaSenha.trim(), setor: USUARIOS_PERMITIDOS[user].setor }, "salvar_usuario");
+      renderUsuariosAdmin();
+      showToast(`Senha do usuário ${user.toUpperCase()} alterada com sucesso!`);
+    }
+  );
+}
+
+function deletarUsuarioBD(user) {
+  perguntarConfirmacao(
+    "🗑️ Remover Usuário",
+    `Tem certeza que deseja remover permanentemente o acesso do usuário <b>${user.toUpperCase()}</b>?`,
+    () => {
+      delete USUARIOS_PERMITIDOS[user];
+      enviarParaGoogleSheets({ usuario: user }, "deletar_usuario");
+      renderUsuariosAdmin();
+      showToast(`Usuário ${user.toUpperCase()} removido do sistema!`, "danger");
+    }
+  );
+}
+
+// ====================================================================== //
+
 function carregarPermissoesDoSheets() {
   if (!SCRIPT_URL || SCRIPT_URL.startsWith("SUA_NOVA_SCRIPT")) return;
 
