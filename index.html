@@ -166,7 +166,8 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
       👤 <span id="userInfoHeader">Usuário: -</span> ▾
     </button>
     <div class="dropdown-content" id="userDropdownMenu">
-      <button id="gearAdmin" onclick="abrirAdminModal()" style="display:none;">🔑 Painel Operacional e Permissões</button>
+      <button id="gearAdmin" onclick="abrirAdminModal()" style="display:none;">🔑 Cadastro de Usúarios</button>
+      <button id="gearPermissoes" onclick="abrirPermissoesModal()" style="display:none;">🔐 Vincular acessos por setor</button>
       <button class="btn-sair-dropdown" onclick="efetuarLogout()">🚪 Sair do Sistema</button>
     </div>
   </div>
@@ -175,7 +176,7 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
 <div class="cards">
   <div class="card ativo" data-filtro="todos" onclick="setFiltro('todos')"><h2 id="cTotal">0</h2><p>Total</p></div>
   <div class="card" data-filtro="A processar" onclick="setFiltro('A processar')"><h2 id="cPad">0</h2><p>A Processar</p></div>
-  <div class="card" data-filtro="Aguardando Reabastecimento" onclick="setFiltro('Aguardando Reabastecimento')"><h2 id="cRea">0</h2><p>Ag. Reabastecimento</p></div>
+  <div class="card" data-filtro="Aguardando Reabastecimento" onclick="setFiltro('Aguardando Reabastecimento')"><h2 id="cRea">0</h2><p>Aguardando reabastecimento</p></div>
   <div class="card" data-filtro="Cancelado" onclick="setFiltro('Cancelado')"><h2 id="cCanc">0</h2><p>Cancelado</p></div>
   <div class="card" data-filtro="Apta para separação" onclick="setFiltro('Apta para separação')"><h2 id="cApt">0</h2><p>Apta para separação</p></div>
   <div class="card" data-filtro="Em separação" onclick="setFiltro('Em separação')"><h2 id="cSep">0</h2><p>Em separação</p></div>
@@ -208,7 +209,7 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
         <option value="Presidente Prudente">Presidente Prudente</option>
       </select>
     </div>
-    <div><label>Coleta Full (Data) *</label><input type="date" id="fColeta"></div>
+    <div><label>Data do Agendamento *</label><input type="date" id="fColeta"></div>
     <div>
       <button style="width: 100%; margin: 0;" onclick="cadastrarNovo()">Cadastrar</button>
     </div>
@@ -241,7 +242,7 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
       <thead>
         <tr>
           <th>Envio</th><th>NF</th><th>Transportadora</th><th>Destino</th>
-          <th>Coleta Full</th><th>Sep. Interna</th><th>Sep. Externa</th><th>Embarque FutFanatics</th><th>Embarque Full</th><th>Status</th><th>Última Movimentação</th><th>Operador</th><th>Ações</th>
+          <th>Data do Agendamento</th><th>Separação interna</th><th>Separação Externa</th><th>Data da Transferência</th><th>Data da Coleta</th><th>Status</th><th>Última Movimentação</th><th>Operador</th><th>Ações</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -261,28 +262,45 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
 <div class="legendas-container">
   <div class="legendas-title">Legenda de Cores do status:</div>
   <div class="legenda-item"><div class="legendas-cor" style="background:#616161"></div> A Processar</div>
-  <div class="legenda-item"><div class="legendas-cor" style="background:#0d47a1"></div> Ag. Reabastecimento</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#0d97a1"></div> Ag. Reabastecimento</div>
   <div class="legenda-item"><div class="legendas-cor" style="background:#b71c1c"></div> Cancelado</div>
   <div class="legenda-item"><div class="legendas-cor" style="background:#4a148c"></div> Apta p/ Separação</div>
-  <div class="legenda-item"><div class="legendas-cor" style="background:#e65100"></div> Em Separação</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#f7cb8d"></div> Em Separação</div>
   <div class="legenda-item"><div class="legendas-cor" style="background:#0288d1"></div> Separação Concluída</div>
-  <div class="legenda-item"><div class="legendas-cor" style="background:#f57f17"></div> Em Conferência</div>
-  <div class="legenda-item"><div class="legendas-cor" style="background:#33691e"></div> Em Expedição</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#8d9c0b"></div> Em Conferência</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#5ef547"></div> Em Expedição</div>
   <div class="legenda-item"><div class="legendas-cor" style="background:#f57c00"></div> Em transferência</div>
-  <div class="legenda-item"><div class="legendas-cor" style="background:#2e7d32"></div> Recebidas HUB SP</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#b3f2b6"></div> Recebidas HUB SP</div>
   <div class="legenda-item"><div class="legendas-cor" style="background:#004d40"></div> Coletado</div>
 </div>
 
-<footer>© 2026 Desenvolvido por Danilo Ramirez — Direitos Reservados à Operação FutFanatics.</footer>
+<footer>© 2026 Desenvolvido por Danilo Ramires — Direitos Reservados à Operação FutFanatics.</footer>
+</div>
+
+<div class="modal-overlay" id="permissoesModal">
+  <div class="modal-box" style="width: 720px; border-top: 5px solid #192C53;">
+    <h3 style="color:#192C53; margin-bottom:10px;">🔐 Vincular acessos por setor</h3>
+    <hr style="border: 0; border-top: 1px dashed #ddd; margin-bottom: 15px;">
+
+    <label>Setor</label>
+    <select id="permissaoSetor" onchange="renderPermissoesSetor()"></select>
+
+    <div style="margin-top:15px; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:8px;" id="listaPermissoesStatus"></div>
+
+    <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+      <button onclick="fecharPermissoesModal()" style="background:#777; width:auto; padding:8px 20px; margin:0;">Fechar</button>
+      <button onclick="salvarPermissoesSetor()" style="background:#27ae60; width:auto; padding:8px 20px; margin:0;">Salvar permissões</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay" id="adminModal">
   <div class="modal-box" style="width: 750px; border-top: 5px solid #192C53;">
-    <h3 style="color:#192C53; margin-bottom:10px;">🔑 Painel Administrativo — Operadores e Setores</h3>
+    <h3 style="color:#192C53; margin-bottom:10px;">🔑 Cadastro de Usúarios</h3>
     <hr style="border: 0; border-top: 1px dashed #ddd; margin-bottom: 15px;">
     
     <div style="background:#f9fbfd; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:20px;">
-      <h4 style="color:#192C53; margin-bottom:8px; font-size:13px;">➕ Autorizar Novo Operador</h4>
+      <h4 style="color:#192C53; margin-bottom:8px; font-size:13px;">➕ Cadastro Novo Operador</h4>
       <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px;">
         <div><label>Login</label><input id="admNovoUser" placeholder="Ex: joao.silva" style="padding:6px;"></div>
         <div>
@@ -293,7 +311,7 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
           </div>
         </div>
         <div>
-          <label>Setor / Nível</label>
+          <label>Setor</label>
           <select id="admNovoSetor" style="padding:6px; margin:5px 0; width:100%;">
             </select>
         </div>
@@ -313,7 +331,7 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
 
     <div>
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <h4 style="color:#192C53; font-size:13px; margin:0;">👥 Operadores Ativos e Filtro</h4>
+        <h4 style="color:#192C53; font-size:13px; margin:0;">👥 Operadores</h4>
         <input type="text" id="filtroAdminUsuarios" placeholder="🔍 Buscar usuário..." oninput="filtrarUsuariosAdmin()" style="width:200px; padding:6px; margin:0; font-size:12px;">
       </div>
       
@@ -338,7 +356,7 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
 <div class="modal-overlay" id="deleteAuthModal" style="z-index: 130000;">
   <div class="modal-box" style="width: 400px; border-top: 5px solid #c0392b; text-align:center;">
     <h3 style="color:#c0392b;">⚠️ Autorização de Administrador Requerida</h3>
-    <p style="margin:12px 0; font-size:13px; color:#444;">Para deletar este envio, digite a sua senha de administrador para confirmar.</p>
+    <p style="margin:12px 0; font-size:13px; color:#444;">Para deletar este envio, solicite a sua senha de administrador para confirmar.</p>
     <input type="password" id="authDeletePass" placeholder="Digite sua senha master" style="width:100%; padding:10px; text-align:center; font-size:16px;">
     <div style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
       <button onclick="fecharDeleteAuthModal()" style="background:#777; width:auto; margin:0; padding:8px 16px;">Cancelar</button>
@@ -382,13 +400,13 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
       <option value="Presidente Prudente">Presidente Prudente</option>
     </select>
     
-    <label>Data Coleta Full</label>
+    <label>Data do Agendamento</label>
     <input type="date" id="modalColeta">
 
-    <label>Data Embarque FutFanatics</label>
+    <label>Data da Transferência</label>
     <input type="date" id="modalEmbarque">
 
-    <label>Data Embarque Full</label>
+    <label>Data da Coleta</label>
     <input type="date" id="modalEmbarqueFull">
     
     <label style="font-weight: bold; color: #e65100;">Status do Envio</label>
@@ -429,9 +447,29 @@ let SETORES_OPERACIONAIS = ["Administrador", "Setor Full", "Setor Inventário", 
 let registros = [];
 let filtroAtivo = 'todos';
 let paginaAtual = 1;
-const LINHAS_POR_PAGINA = 20;
+const LINHAS_POR_PAGINA = 12;
 let acaoConfirmacaoPendente = null;
 let idxExclusaoPendente = null;
+
+const STATUS_PERMISSOES = [
+  "Apta para separação",
+  "Aguardando Reabastecimento",
+  "Cancelado",
+  "Em separação",
+  "Em conferência",
+  "Em Expedição",
+  "Em transferência",
+  "Recebidas HUB SP",
+  "Coletado"
+];
+
+let PERMISSOES_SETORES = {
+  "Setor Full": ["Apta para separação", "Aguardando Reabastecimento", "Cancelado", "Em separação"],
+  "Setor Inventário": ["Em conferência"],
+  "Setor Inventario": ["Em conferência"],
+  "Setor Expedição": ["Em Expedição", "Em transferência", "Coletado"],
+  "HUB SP": ["Recebidas HUB SP", "Coletado"]
+};
 
 const LOGOS = {
   'Mercado Livre': 'https://logodownload.org/wp-content/uploads/2016/08/mercado-livre-logo-8.png',
@@ -441,6 +479,7 @@ const LOGOS = {
 window.addEventListener('DOMContentLoaded', () => {
   atualizarSelectSetores();
   carregarUsuariosDoSheets();
+  carregarPermissoesDoSheets();
 });
 
 function atualizarSelectSetores() {
@@ -621,9 +660,11 @@ function efetuarLogin() {
     
     if (USUARIOS_PERMITIDOS[u].setor === "Administrador") {
       document.getElementById('gearAdmin').style.display = 'block';
+      document.getElementById('gearPermissoes').style.display = 'block';
       document.getElementById('blocoCadastroLote').style.display = 'block';
     } else {
       document.getElementById('gearAdmin').style.display = 'none';
+      document.getElementById('gearPermissoes').style.display = 'none';
       if(USUARIOS_PERMITIDOS[u].setor !== "Setor Full") {
          document.getElementById('blocoCadastroLote').style.display = 'none';
       } else {
@@ -692,24 +733,92 @@ function cadastrarNovoUsuarioBD() {
   );
 }
 
+function carregarPermissoesDoSheets() {
+  if (!SCRIPT_URL || SCRIPT_URL.startsWith("SUA_NOVA_SCRIPT")) return;
+
+  fetch(SCRIPT_URL + "?tipo=permissoes")
+    .then(res => res.json())
+    .then(dados => {
+      if(!Array.isArray(dados)) return;
+
+      dados.forEach(item => {
+        if(!item.setor) return;
+        const setor = String(item.setor).trim();
+        const status = String(item.status_permitidos || "")
+          .split("|")
+          .map(s => s.trim())
+          .filter(Boolean);
+
+        PERMISSOES_SETORES[setor] = status;
+      });
+    })
+    .catch(err => console.error("Erro ao carregar permissões:", err));
+}
+
+function abrirPermissoesModal() {
+  const u = (sessionStorage.getItem('usuarioLogado') || "").toLowerCase();
+  fecharDropdown();
+
+  if (!(USUARIOS_PERMITIDOS[u] && USUARIOS_PERMITIDOS[u].setor === "Administrador")) {
+    showToast("Acesso restrito apenas a Administradores!", "danger");
+    return;
+  }
+
+  atualizarSelectPermissoes();
+  document.getElementById('permissoesModal').style.display = 'flex';
+  renderPermissoesSetor();
+}
+
+function fecharPermissoesModal() {
+  document.getElementById('permissoesModal').style.display = 'none';
+}
+
+function atualizarSelectPermissoes() {
+  const select = document.getElementById('permissaoSetor');
+  select.innerHTML = '';
+
+  SETORES_OPERACIONAIS
+    .filter(setor => setor !== "Administrador")
+    .forEach(setor => {
+      const opt = document.createElement('option');
+      opt.value = setor;
+      opt.textContent = setor;
+      select.appendChild(opt);
+    });
+}
+
+function renderPermissoesSetor() {
+  const setor = document.getElementById('permissaoSetor').value;
+  const container = document.getElementById('listaPermissoesStatus');
+  const permissoes = PERMISSOES_SETORES[setor] || [];
+
+  container.innerHTML = STATUS_PERMISSOES.map(status => {
+    const checked = permissoes.includes(status) ? 'checked' : '';
+    return `
+      <label style="display:flex; align-items:center; gap:8px; padding:9px; border:1px solid #e2e8f0; border-radius:8px; background:#f9fbfd; margin:0;">
+        <input type="checkbox" class="check-permissao-status" value="${status}" ${checked} style="width:auto; margin:0;">
+        <span>${status}</span>
+      </label>
+    `;
+  }).join('');
+}
+
+function salvarPermissoesSetor() {
+  const setor = document.getElementById('permissaoSetor').value;
+  const selecionados = Array.from(document.querySelectorAll('.check-permissao-status:checked')).map(c => c.value);
+
+  PERMISSOES_SETORES[setor] = selecionados;
+  enviarParaGoogleSheets({ setor: setor, status_permitidos: selecionados.join("|") }, "salvar_permissoes");
+  showToast(`Permissões do setor ${setor} salvas!`);
+}
+
 // MATRIZ RESTRETA DE ACESSOS E ETAPAS POR SETOR OPERACIONAL
 function verificarPermissaoFluxo(statusDestino) {
   const setor = getSetorAtual();
   if(setor === "Administrador") return true;
-  
-  if(setor === "Setor Full") {
-     return ["Apta para separação", "Aguardando Reabastecimento", "Cancelado", "Em separação"].includes(statusDestino);
-  }
-  if(setor === "Setor Inventário" || setor === "Setor Inventario") {
-     return ["Em conferência"].includes(statusDestino);
-  }
-  if(setor === "Setor Expedição") {
-     return ["Em Expedição", "Em transferência", "Coletado"].includes(statusDestino);
-  }
-  if(setor === "HUB SP") {
-     return ["Recebidas HUB SP", "Coletado"].includes(statusDestino);
-  }
-  return false;
+
+  const permissoes = PERMISSOES_SETORES[setor] || [];
+  return permissoes.includes(statusDestino);
 }
 
 function carregarDadosDoGoogleSheets() {
@@ -827,7 +936,7 @@ function cadastrarNovo(){
   const destino  = document.getElementById('fDestino').value;
   const colInput = document.getElementById('fColeta').value;
   
-  if(!colInput){ showToast('A data da Coleta Full é obrigatória!', 'danger'); return; }
+  if(!colInput){ showToast('A Data do Agendamento é obrigatória!', 'danger'); return; }
   if(!envio || !nf || !transp){ showToast('Preencha Envio, NF e Transportadora.', 'danger'); return; }
 
   const duplicado = registros.some(r => String(r.envio) === String(envio));
@@ -924,38 +1033,38 @@ function avancarEsteira(idx, proximoStatus) {
       
       // ALIMENTAÇÃO DINÂMICA DAS COLUNAS DE AUDITORIA DE CADA CARD DO KANBAN
       if (proximoStatus === 'Apta para separação') {
-         r.status_apta_para_separacao = dataHojeBR();
+         r.status_apta_para_separacao = agoraBR();
          r.usuario_que_colocou_apta = getUsuarioAtual();
       } else if (proximoStatus === 'Aguardando Reabastecimento') {
-         r.ag_reabastecimento = dataHojeBR();
+         r.ag_reabastecimento = agoraBR();
          r.usuario_que_enviou_para_reabastecimento = getUsuarioAtual();
       } else if (proximoStatus === 'Em separação') {
-         r.em_separacao = dataHojeBR();
+         r.em_separacao = agoraBR();
          r.usuario_que_liberou_a_separacao = getUsuarioAtual();
       } else if (proximoStatus === 'Em conferência') {
-         r.em_conferencia = dataHojeBR();
+         r.em_conferencia = agoraBR();
          r.usuario_que_enviou_para_conferencia = getUsuarioAtual();
       } else if (proximoStatus === 'Em Expedição') {
-         r.em_expedicao = dataHojeBR();
+         r.em_expedicao = agoraBR();
          r.usuario_que_liberou_para_expedicao = getUsuarioAtual();
       } else if (proximoStatus === 'Em transferência') {
-         r.em_transferencia = dataHojeBR();
+         r.em_transferencia = agoraBR();
          r.usuario_que_realizou_a_transferencia = getUsuarioAtual();
-         r.embarque = dataHojeBR();
+         r.embarque = agoraBR();
          r.usuario_que_embarcou = getUsuarioAtual();
       } else if (proximoStatus === 'Recebidas HUB SP') {
-         r.recebido_no_hubsp = dataHojeBR();
+         r.recebido_no_hubsp = agoraBR();
          r.usuario_que_recebeu_hub_sp = getUsuarioAtual();
       } else if (proximoStatus === 'Coletado') {
-         r.coletado = dataHojeBR();
+         r.coletado = agoraBR();
          r.usuario_que_realizou_a_expedicao_para_full = getUsuarioAtual();
-         r.embarque_full = dataHojeBR();
+         r.embarque_full = agoraBR();
          r.usuario_que_expediu = getUsuarioAtual();
          
          if(r.destino === "Presidente Prudente") {
-            r.embarque = dataHojeBR();
+            r.embarque = agoraBR();
             r.usuario_que_embarcou = getUsuarioAtual();
-            r.em_transferencia = dataHojeBR();
+            r.em_transferencia = agoraBR();
             r.usuario_que_realizou_a_transferencia = getUsuarioAtual();
          }
       }
@@ -1078,15 +1187,15 @@ function exportarExcel() {
         "NF": r.nf || "-",
         "TRANSPORTADORA": r.transportadora || "-",
         "DESTINO": r.destino || "-",
-        "COLETA FULL": r.coleta || "-",
+        "DATA DO AGENDAMENTO": r.coleta || "-",
         "USUARIO QUE CADASTROU": r.usuario_que_cadastrou || "-",
         "SEPARAÇÃO INTERNA": r.sep_interna || "Pendente",
         "USUARIO QUE FINALIZOU INTERNA": r.usuario_que_finalizou_interna || "-",
         "SEPARAÇÃO EXTERNA": r.sep_externa || "Pendente",
         "USUARIO QUE FINALIZOU EXTERNA": r.usuario_que_finalizou_externa || "-",
-        "EMBARQUE FUTFANATICS": r.embarque || "-",
+        "DATA DA TRANSFERÊNCIA": r.embarque || "-",
         "USUARIO QUE EMBARCOU": r.usuario_que_embarcou || "-",
-        "EMBARQUE FULL": r.embarque_full || "-",
+        "DATA DA COLETA": r.embarque_full || "-",
         "USUARIO QUE EXPEDIU": r.usuario_que_expediu || "-",
         "STATUS APTA PARA SEPARAÇÃO": r.status_apta_para_separacao || "-",
         "USUARIO QUE COLOCOU APTA": r.usuario_que_colocou_apta || "-",
@@ -1199,7 +1308,7 @@ function render(){
     } else if(r.status === 'Aguardando Reabastecimento' || r.status === 'Cancelado') {
       bAcao = `<button title="Retornar para esteira de Separação" style="background:#4a148c" onclick="avancarEsteira(${r.originalIdx}, 'Apta para separação')">✔️ Apta para separação</button>`;
     } else if(r.status === 'Apta para separação') {
-      bAcao = `<button title="Iniciar o processo de separação de mercadorias" style="background:#e65100" onclick="avancarEsteira(${r.originalIdx}, 'Em separação')">📦 Em separação</button>`;
+      bAcao = `<button title="Iniciar o processo de separação de mercadorias" style="background:#e65100" onclick="avancarEsteira(${r.originalIdx}, 'Em separação')">📑 Em separação</button>`;
     } else if(r.status === 'Em separação') {
       let bInt = r.sep_interna==='Pendente' ? `<button title="Concluir a Separação Interna do Lote" style="background:#0288d1; font-size:9px;" onclick="alterarSubSeparacao(${r.originalIdx}, 'interna')">🏠 Interna Fin.</button>` : '';
       let bExt = r.sep_externa==='Pendente' ? `<button title="Concluir a Separação Externa do Lote" style="background:#512da8; font-size:9px;" onclick="alterarSubSeparacao(${r.originalIdx}, 'externa')">🏢 Externa Fin.</button>` : '';
@@ -1207,7 +1316,7 @@ function render(){
     } else if(r.status === 'Separação Concluída') {
       bAcao = `<button title="Enviar para auditoria e conferência" style="background:#f57f17; color:#111" onclick="avancarEsteira(${r.originalIdx}, 'Em conferência')">🔍 Em conferência</button>`;
     } else if(r.status === 'Em conferência') {
-      bAcao = `<button title="Enviar para a doca de expedição" style="background:#33691e" onclick="avancarEsteira(${r.originalIdx}, 'Em Expedição')">🚚 Em Expedição</button>`;
+      bAcao = `<button title="Enviar para a doca de expedição" style="background:#33691e" onclick="avancarEsteira(${r.originalIdx}, 'Em Expedição')">.📦 Em Expedição</button>`;
     } else if(r.status === 'Em Expedição') {
       if(r.destino === "Presidente Prudente") {
          bAcao = `<button title="Lote com destino Próprio: Finalizar direto como Coletado" style="background:#004d40" onclick="avancarEsteira(${r.originalIdx}, 'Coletado')">🚀 Coletado</button>`;
