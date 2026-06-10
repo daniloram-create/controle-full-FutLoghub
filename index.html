@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FutLog Full - Controle Operacional Full</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
+body{background:#f4f6fb;padding:20px}
+
+/* TELA DE LOGIN (BLOQUEIO INTEGRAL) */
+#loginOverlay {position:fixed;top:0;left:0;width:100%;height:100%;background:#192C53;z-index:10000;display:flex;justify-content:center;align-items:center}
+.login-box {background:#fff;padding:40px;border-radius:12px;width:380px;box-shadow:0 10px 25px rgba(0,0,0,0.3);text-align:center}
+.login-logo-img {max-height:35px;width:auto;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto}
+.login-box h2 {color:#192C53;margin-bottom:20px;font-size:24px;letter-spacing:-0.5px}
+.login-box input, .login-box select {width:100%;padding:12px;margin:10px 0;border:1px solid #ccc;border-radius:8px;font-size:15px}
+.login-box button {width:100%;padding:12px;background:#192C53;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:16px}
+.login-box button:hover {background:#111f3b}
+
+header{background:#192C53;color:#fff;padding:15px 25px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:20px;flex-wrap:wrap}
+header .logo-img{max-height:60px;width:auto;background:#fff;padding:6px 10px;border-radius:8px;flex-shrink:0}
+header h1{font-size:clamp(22px, 4vw, 36px);text-align:center;margin:0;font-weight:bold;letter-spacing:-0.5px;flex:1;min-width:280px}
+
+.dropdown-user {position: relative;display: inline-block;}
+.dropdown-btn {background: rgba(255, 255, 255, 0.1);color: #fff;border: 1px solid rgba(255, 255, 255, 0.25);padding: 8px 16px;font-weight: bold;font-size: 14px;border-radius: 8px;cursor: pointer;display: flex;align-items: center;gap: 8px;transition: 0.2s;}
+.dropdown-btn:hover {background: rgba(255, 255, 255, 0.2);border-color: rgba(255, 255, 255, 0.4);}
+.dropdown-content {display: none;position: absolute;right: 0;background-color: #fff;min-width: 210px;box-shadow: 0px 8px 24px rgba(0,0,0,0.15);border-radius: 8px;z-index: 1500;margin-top: 6px;overflow: hidden;border: 1px solid #eee;}
+.dropdown-content button {width: 100%;text-align: left;padding: 12px 16px;margin: 0;background: none;color: #333;border: none;border-bottom: 1px solid #f0f0f0;border-radius: 0;font-size: 13px;font-weight: bold;display: flex;align-items: center;gap: 8px;transition: 0.2s;cursor: pointer;}
+.dropdown-content button:last-child {border-bottom: none;}
+.dropdown-content button:hover {background-color: #f4f6fb;color: #192C53;}
+.dropdown-content button.btn-sair-dropdown:hover {background-color: #fff5f5;color: #c0392b;}
+
+.container{max-width:1700px;margin:auto;display:none} 
+
+/* GRID DE CARDS */
+.cards{display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:10px;margin-bottom:20px}
+.card{background:#fff;padding:12px 8px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.08);text-align:center;cursor:pointer;transition:.2s;border:2px solid transparent;display:flex;flex-direction:column;justify-content:center}
+.card:hover{transform:scale(1.02)}
+.card.ativo{border-color:#192C53;background:#eef2fa}
+.card h2{color:#192C53;font-size:22px}
+.card p{color:#555;margin-top:4px;font-size:11px;font-weight:bold;line-height:1.2}
+
+.legendas-container {background:#fff;padding:12px;border-radius:10px;margin-top:25px;margin-bottom:15px;box-shadow:0 2px 6px rgba(0,0,0,.08);display:flex;flex-wrap:wrap;gap:15px;justify-content:center;align-items:center}
+.legendas-title {font-size:12px;font-weight:bold;color:#192C53;text-transform:uppercase}
+.legenda-item {display:flex;align-items:center;gap:6px;font-size:12px;font-weight:bold;color:#444}
+.legendas-cor {width:16px;height:16px;border-radius:4px;display:inline-block;flex-shrink:0}
+
+.form-box,.table-box, .filtros-extras-box {background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);margin-bottom:20px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:10px;align-items:end}
+.form-grid label{font-size:12px;color:#444;display:block;margin-left:6px}
+input,select,button{padding:10px;border:1px solid #ccc;border-radius:8px;margin:5px;width:calc(100% - 10px);font-size:14px}
+button{background:#192C53;color:#fff;border:none;cursor:pointer;transition:.3s}
+button:hover{opacity:.9}
+
+/* REDUÇÃO DA LARGURA DOS BOTÕES DE AÇÕES */
+.actions{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;min-width:160px;max-width:180px}
+.actions button{width:100%;padding:5px 8px;margin:0;font-size:10px;display:inline-flex;align-items:center;justify-content:center;gap:4px;border-radius:6px;font-weight:bold;color:#fff}
+.actions-adm{display:flex;gap:4px;margin-top:2px;width:100%}
+.actions-adm button{flex:1;padding:4px 4px;font-size:10px}
+.btn-edit{background:#2a7ab0}
+.btn-del{background:#c0392b}
+
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px 8px;border-bottom:1px solid #eee;text-align:center;font-size:12px;vertical-align:middle}
+th{background:#192C53;color:#fff;font-weight:600}
+
+.badge-status {display:inline-block;padding:4px 8px;border-radius:20px;font-size:10px;font-weight:bold;text-transform:uppercase}
+.badge-default {background:#e0e0e0;color:#424242}
+.badge-reabast {background:#bbdefb;color:#0d47a1}
+.badge-canc {background:#ffcdd2;color:#b71c1c}
+.badge-apta {background:#e1bee7;color:#4a148c}
+.badge-separacao {background:#ffe0b2;color:#e65100}
+.badge-sepconcl {background:#b3e5fc;color:#0288d1}
+.badge-conferencia {background:#fff9c4;color:#f57f17}
+.badge-expedicao {background:#dcedc8;color:#33691e}
+.badge-transferencia {background:#ffcc80;color:#f57c00}
+.badge-hubsp {background:#c8e6c9;color:#2e7d32}
+.badge-coletado {background:#b2dfdb;color:#004d40}
+
+.badge-sep-interna {display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:bold;}
+.badge-sep-externa {display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:bold;}
+.sep-pendente {background:#ffe0b2;color:#e65100}
+.sep-finalizada {background:#c8e6c9;color:#2e7d32}
+
+tr.status-padrao {border-left:8px solid #616161}
+tr.status-reabast {border-left:8px solid #0d47a1}
+tr.status-canc {border-left:8px solid #b71c1c}
+tr.status-apta {border-left:8px solid #4a148c}
+tr.status-separacao {border-left:8px solid #e65100}
+tr.status-sepconcl {border-left:8px solid #0288d1}
+tr.status-conferencia {border-left:8px solid #f57f17}
+tr.status-expedicao {border-left:8px solid #33691e}
+tr.status-transferencia {border-left:8px solid #f57c00}
+tr.status-hubsp {border-left:8px solid #2e7d32}
+tr.status-coletado {border-left:8px solid #004d40}
+
+@keyframes piscarAlertaLateral {
+  0% { border-left-color: #ef5350; }
+  50% { border-left-color: #ffffff; }
+  100% { border-left-color: #ef5350; }
+}
+tr.alerta-piscante { animation: piscarAlertaLateral 1s infinite !important; }
+tr.alerta-critico { border-left: 8px solid #ef5350 !important; }
+
+.filtros-barra {display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;}
+.filtros-barra .bloco-filtro {display: flex; flex-direction: column; min-width: 150px;}
+.filtros-barra .bloco-filtro label {font-size:12px; color:#444; margin-left:6px; margin-bottom:2px;}
+.filtros-barra button.btn-exportar {width:auto; display:inline-flex; align-items:center; gap:6px; font-weight:bold;}
+
+.search-bar{display:flex;gap:10px;margin-bottom:10px; flex-grow: 1;}
+.logo-transp{height:22px;width:auto;object-fit:contain;vertical-align:middle;margin:0}
+footer{text-align:center;padding:15px;color:#666;font-size:13px}
+
+.loading-status {text-align:center;padding:15px;background:#eef2fa;color:#192C53;font-weight:bold;border-radius:8px;margin-bottom:15px}
+.paginacao-container {display:flex;justify-content:space-between;align-items:center;margin-top:15px;padding-top:10px;border-top:1px solid #eee}
+.paginacao-info {font-size:14px;color:#555}
+.paginacao-botoes {display:flex;align-items:center;gap:5px}
+.paginacao-botoes button {width:auto;padding:6px 12px;font-size:13px;background:#192C53;color:white}
+.paginacao-botoes button:disabled {background:#ccc;cursor:not-allowed;opacity:0.7}
+.paginacao-numeros {display:flex;gap:4px}
+.btn-pagina-num {background:#fff !important;color:#192C53 !important;border:1px solid #192C53 !important;min-width:32px;padding:6px !important;font-weight:bold}
+.btn-pagina-num.ativo {background:#192C53 !important;color:#fff !important}
+
+/* GARANTIA DE MODAIS NA FRENTE (Z-INDEX ALTÍSSIMO) */
+.modal-overlay {display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(25, 44, 83, 0.5);backdrop-filter:blur(4px);z-index:110000;justify-content:center;align-items:center;animation:fadeIn 0.2s ease-out}
+.modal-box {background:#fff;padding:25px;border-radius:12px;width:500px;max-width:90%;box-shadow:0 10px 40px rgba(0,0,0,0.3);max-height: 90vh; overflow-y: auto;}
+.modal-box label {font-size:12px;color:#444;display:block;margin-top:10px;margin-left:5px}
+
+#toast-container {position:fixed;bottom:20px;right:20px;z-index:120000;display:flex;flex-direction:column;gap:10px}
+.toast {background:#192C53;color:#fff;padding:14px 22px;border-radius:8px;box-shadow:0 5px 15px rgba(0,0,0,0.2);display:flex;align-items:center;gap:10px;font-weight:bold;font-size:14px;}
+.toast.success {border-left:6px solid #27ae60}
+.toast.danger {border-left:6px solid #c0392b}
+</style>
+</head>
+<body>
+
+<div id="loginOverlay">
+  <div class="login-box">
+    <img class="login-logo-img" src="https://logodownload.org/wp-content/uploads/2026/05/fut-fanatics-logo.png" alt="FutFanatics" onerror="this.style.display='none'">
+    <h2>FutLog Full</h2>
+    <input type="text" id="loginUser" placeholder="Usuário" onkeydown="if(event.key === 'Enter') efetuarLogin()">
+    <input type="password" id="loginPass" placeholder="Senha" onkeydown="if(event.key === 'Enter') efetuarLogin()">
+    <button onclick="efetuarLogin()">Entrar no Sistema</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="loginErrorModal" style="z-index: 125000;">
+  <div class="modal-box" style="width: 360px; text-align: center; border-top: 5px solid #c0392b;">
+    <h3 style="color:#c0392b; font-size: 18px;">❌ Acesso Negado</h3>
+    <p style="margin: 18px 0; color: #444; font-size: 14px;">Usuário ou senha incorretos.</p>
+    <button onclick="fecharLoginErrorModal()" style="background:#c0392b; width:auto; padding:8px 24px;">Tentar Novamente</button>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<div class="container" id="mainContainer">
+<header>
+  <img class="logo-img" src="https://logodownload.org/wp-content/uploads/2026/05/fut-fanatics-logo.png" alt="FutFanatics" onerror="this.style.display='none'">
+  <h1>Controle Operacional Full</h1>
+  
+  <div class="dropdown-user">
+    <button class="dropdown-btn" onclick="toggleDropdown(event)">
+      👤 <span id="userInfoHeader">Usuário: -</span> ▾
+    </button>
+    <div class="dropdown-content" id="userDropdownMenu">
+      <button id="gearAdmin" onclick="abrirAdminModal()" style="display:none;">🔑 Painel Operacional e Permissões</button>
+      <button class="btn-sair-dropdown" onclick="efetuarLogout()">🚪 Sair do Sistema</button>
+    </div>
+  </div>
+</header>
+
+<div class="cards">
+  <div class="card ativo" data-filtro="todos" onclick="setFiltro('todos')"><h2 id="cTotal">0</h2><p>Total</p></div>
+  <div class="card" data-filtro="A processar" onclick="setFiltro('A processar')"><h2 id="cPad">0</h2><p>A Processar</p></div>
+  <div class="card" data-filtro="Aguardando Reabastecimento" onclick="setFiltro('Aguardando Reabastecimento')"><h2 id="cRea">0</h2><p>Ag. Reabastecimento</p></div>
+  <div class="card" data-filtro="Cancelado" onclick="setFiltro('Cancelado')"><h2 id="cCanc">0</h2><p>Cancelado</p></div>
+  <div class="card" data-filtro="Apta para separação" onclick="setFiltro('Apta para separação')"><h2 id="cApt">0</h2><p>Apta para separação</p></div>
+  <div class="card" data-filtro="Em separação" onclick="setFiltro('Em separação')"><h2 id="cSep">0</h2><p>Em separação</p></div>
+  <div class="card" data-filtro="Separação Concluída" onclick="setFiltro('Separação Concluída')"><h2 id="cSepConcl">0</h2><p>Separação Concluída</p></div>
+  <div class="card" data-filtro="Em conferência" onclick="setFiltro('Em conferência')"><h2 id="cConf">0</h2><p>Em conferência</p></div>
+  <div class="card" data-filtro="Em Expedição" onclick="setFiltro('Em Expedição')"><h2 id="cExp">0</h2><p>Em Expedição</p></div>
+  <div class="card" data-filtro="Em transferência" onclick="setFiltro('Em transferência')"><h2 id="cTransp">0</h2><p>Em transferência</p></div>
+  <div class="card" data-filtro="Recebidas HUB SP" onclick="setFiltro('Recebidas HUB SP')"><h2 id="cHubSp">0</h2><p>Recebidas HUB SP</p></div>
+  <div class="card" data-filtro="Coletado" onclick="setFiltro('Coletado')"><h2 id="cCol">0</h2><p>Coletado</p></div>
+  <div class="card" data-filtro="alerta" onclick="setFiltro('alerta')" style="background:#fff5f5"><h2 id="cAtr" style="color:#c0392b">0</h2><p style="color:#c0392b">Em Alerta</p></div>
+</div>
+
+<div id="loadingStatus" class="loading-status">🔄 Conectando ao Banco de Dados...</div>
+
+<div class="form-box" id="blocoCadastroLote">
+  <h3 style="color:#192C53;margin-bottom:10px;">Novo Cadastro de Envio</h3>
+  <div class="form-grid">
+    <div><label>Número Envio Full</label><input id="fEnvio" placeholder="Nº do envio"></div>
+    <div><label>Nota Fiscal</label><input id="fNF" placeholder="NF"></div>
+    <div><label>Transportadora</label>
+      <select id="fTransp">
+        <option value="">Selecione</option>
+        <option value="Mercado Livre">Mercado Livre</option>
+        <option value="Shopee">Shopee</option>
+      </select>
+    </div>
+    <div><label>Destino da Coleta</label>
+      <select id="fDestino">
+        <option value="São Paulo" selected>São Paulo</option>
+        <option value="Presidente Prudente">Presidente Prudente</option>
+      </select>
+    </div>
+    <div><label>Coleta Full (Data) *</label><input type="date" id="fColeta"></div>
+    <div>
+      <button style="width: 100%; margin: 0;" onclick="cadastrarNovo()">Cadastrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="filtros-extras-box">
+  <div class="filtros-barra">
+    <div class="bloco-filtro">
+      <label>Coleta a partir de:</label>
+      <input type="date" id="filtroDataInicio" onchange="resetarPaginaERender()" style="margin:0;">
+    </div>
+    <div class="bloco-filtro">
+      <label>Coleta até:</label>
+      <input type="date" id="filtroDataFim" onchange="resetarPaginaERender()" style="margin:0;">
+    </div>
+    <div style="flex-grow: 1;"></div>
+    <div>
+      <button class="btn-exportar" style="background:#27ae60; margin:0;" onclick="exportarExcel()">📊 Baixar Excel</button>
+    </div>
+  </div>
+</div>
+
+<div class="table-box">
+  <div class="search-bar">
+    <input id="busca" placeholder="Filtrar por envio, NF, transportadora, destino, operador..." oninput="resetarPaginaERender()">
+  </div>
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Envio</th><th>NF</th><th>Transportadora</th><th>Destino</th>
+          <th>Coleta Full</th><th>Sep. Interna</th><th>Sep. Externa</th><th>Embarque FutFanatics</th><th>Embarque Full</th><th>Status</th><th>Última Movimentação</th><th>Operador</th><th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="paginacao-container">
+    <div class="paginacao-info" id="paginacaoInfo">Exibindo 0-0 de 0 registros</div>
+    <div class="paginacao-botoes">
+      <button id="btnAnterior" onclick="paginaAnterior()">◀</button>
+      <div class="paginacao-numeros" id="paginacaoNumbers"></div>
+      <button id="btnProximo" onclick="proximaPagina()">▶</button>
+    </div>
+  </div>
+</div>
+
+<div class="legendas-container">
+  <div class="legendas-title">Legenda de Cores do status:</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#616161"></div> A Processar</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#0d47a1"></div> Ag. Reabastecimento</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#b71c1c"></div> Cancelado</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#4a148c"></div> Apta p/ Separação</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#e65100"></div> Em Separação</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#0288d1"></div> Separação Concluída</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#f57f17"></div> Em Conferência</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#33691e"></div> Em Expedição</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#f57c00"></div> Em transferência</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#2e7d32"></div> Recebidas HUB SP</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#004d40"></div> Coletado</div>
+</div>
+
+<footer>© 2026 Desenvolvido por Danilo Ramirez — Direitos Reservados à Operação FutFanatics.</footer>
+</div>
+
+<div class="modal-overlay" id="adminModal">
+  <div class="modal-box" style="width: 750px; border-top: 5px solid #192C53;">
+    <h3 style="color:#192C53; margin-bottom:10px;">🔑 Painel Administrativo — Operadores e Setores</h3>
+    <hr style="border: 0; border-top: 1px dashed #ddd; margin-bottom: 15px;">
+    
+    <div style="background:#f9fbfd; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:20px;">
+      <h4 style="color:#192C53; margin-bottom:8px; font-size:13px;">➕ Autorizar Novo Operador</h4>
+      <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px;">
+        <div><label>Login</label><input id="admNovoUser" placeholder="Ex: joao.silva" style="padding:6px;"></div>
+        <div>
+          <label>Senha</label>
+          <div style="display:flex; align-items:center; border:1px solid #ccc; border-radius:8px; background:#fff; padding-right:4px;">
+            <input type="password" id="admNovaSenha" placeholder="Senha" style="border:none; margin:0; padding:6px; width:100%; outline:none;">
+            <button onclick="toggleOlhinhoNovoUser()" id="btn_olho_novo" style="background:none; color:#192C53; padding:0; margin:0; width:auto; font-size:14px;">👁️</button>
+          </div>
+        </div>
+        <div>
+          <label>Setor / Nível</label>
+          <select id="admNovoSetor" style="padding:6px; margin:5px 0; width:100%;">
+            </select>
+        </div>
+        <div>
+          <button style="width: 100%; margin: 0; background: #27ae60; padding:8px;" onclick="cadastrarNovoUsuarioBD()">Autorizar</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff3e0; padding:12px; border-radius:8px; border:1px solid #ffe0b2; margin-bottom:20px;">
+      <h4 style="color:#e65100; margin-bottom:6px; font-size:13px;">📁 Criar Novo Setor Operacional</h4>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <input type="text" id="admNomeNovoSetor" placeholder="Ex: Setor De Qualidade" style="padding:6px; margin:0; flex-grow:1;">
+        <button onclick="adicionarSetorOperacional()" style="background:#e65100; width:auto; margin:0; padding:8px 16px; font-weight:bold;">Adicionar Setor</button>
+      </div>
+    </div>
+
+    <div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h4 style="color:#192C53; font-size:13px; margin:0;">👥 Operadores Ativos e Filtro</h4>
+        <input type="text" id="filtroAdminUsuarios" placeholder="🔍 Buscar usuário..." oninput="filtrarUsuariosAdmin()" style="width:200px; padding:6px; margin:0; font-size:12px;">
+      </div>
+      
+      <div style="overflow-x:auto; max-height: 200px; border:1px solid #eee;">
+        <table style="width:100%; font-size:12px;" id="tabelaAdminUsuarios">
+          <thead>
+            <tr style="background:#eef2fa; color:#192C53;">
+              <th>Usuário</th><th>Setor</th><th>Senha</th><th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyUsuariosAdmin"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="margin-top:20px; display:flex; justify-content: flex-end;">
+      <button onclick="fecharAdminModal()" style="background:#777; width:auto; padding:8px 20px; margin:0;">Fechar Painel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="deleteAuthModal" style="z-index: 130000;">
+  <div class="modal-box" style="width: 400px; border-top: 5px solid #c0392b; text-align:center;">
+    <h3 style="color:#c0392b;">⚠️ Autorização de Administrador Requerida</h3>
+    <p style="margin:12px 0; font-size:13px; color:#444;">Para deletar este envio, digite a sua senha de administrador para confirmar.</p>
+    <input type="password" id="authDeletePass" placeholder="Digite sua senha master" style="width:100%; padding:10px; text-align:center; font-size:16px;">
+    <div style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
+      <button onclick="fecharDeleteAuthModal()" style="background:#777; width:auto; margin:0; padding:8px 16px;">Cancelar</button>
+      <button onclick="confirmarExclusaoComSenha()" style="background:#c0392b; width:auto; margin:0; padding:8px 16px;">Validar e Deletar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirmModal" style="z-index: 140000;">
+  <div class="modal-box" style="width: 420px; text-align: center; border-top: 5px solid #192C53;">
+    <h3 id="confirmTitle" style="color:#192C53; font-size: 18px;">⚠️ Confirmar Ação</h3>
+    <p id="confirmMessage" style="margin: 18px 0; color: #444; font-size: 14px; line-height: 1.5;"></p>
+    <div style="display:flex; gap:10px; justify-content: center; margin-top: 15px;">
+      <button onclick="responderConfirmacao(false)" style="background:#777; width:auto; padding:8px 18px; margin:0; font-weight:bold;">Cancelar</button>
+      <button onclick="responderConfirmacao(true)" style="background:#192C53; width:auto; padding:8px 18px; margin:0; font-weight:bold;">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <h3>✏️ Editar Informações Cadastrais</h3>
+    <hr style="border: 0; border-top: 1px solid #ddd; margin-bottom: 10px;">
+    <input type="hidden" id="modalId">
+    
+    <label>Número Envio Full</label>
+    <input id="modalEnvio">
+    
+    <label>Nota Fiscal</label>
+    <input id="modalNF">
+    
+    <label>Transportadora</label>
+    <select id="modalTransp">
+      <option value="Mercado Livre">Mercado Livre</option>
+      <option value="Shopee">Shopee</option>
+    </select>
+    
+    <label>Destino da Coleta</label>
+    <select id="modalDestino">
+      <option value="São Paulo">São Paulo</option>
+      <option value="Presidente Prudente">Presidente Prudente</option>
+    </select>
+    
+    <label>Data Coleta Full</label>
+    <input type="date" id="modalColeta">
+
+    <label>Data Embarque FutFanatics</label>
+    <input type="date" id="modalEmbarque">
+
+    <label>Data Embarque Full</label>
+    <input type="date" id="modalEmbarqueFull">
+    
+    <label style="font-weight: bold; color: #e65100;">Status do Envio</label>
+    <select id="modalStatus" style="border: 2px solid #e65100; font-weight: bold;">
+      <option value="A processar">A processar</option>
+      <option value="Aguardando Reabastecimento">Aguardando Reabastecimento</option>
+      <option value="Cancelado">Cancelado</option>
+      <option value="Apta para separação">Apta para separação</option>
+      <option value="Em separação">Em separação</option>
+      <option value="Separação Concluída">Separação Concluída</option>
+      <option value="Em conferência">Em conferência</option>
+      <option value="Em Expedição">Em Expedição</option>
+      <option value="Em transferência">Em transferência</option>
+      <option value="Recebidas HUB SP">Recebidas HUB SP</option>
+      <option value="Coletado">Coletado</option>
+    </select>
+    
+    <div style="margin-top:20px; display:flex; gap:10px; justify-content: flex-end;">
+      <button onclick="fecharModal()" style="background:#777; width:auto; padding:10px 20px;">Cancelar</button>
+      <button onclick="salvarEdicaoModal()" style="background:#2a7ab0; width:auto; padding:10px 20px;">Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// URL DO GOOGLE APPS SCRIPT
+const SCRIPT_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnSQf21Uy5vWOgrqmQS4KOj_b7GuAqmJVoftIh1-I4ZICdSuyeiI9B0o-g7bCpGwR9his9m_3L4LaJ__J6CzlqWbPZVpGQSKyJ3ps8UqPY8ytVru88N10f1jVS3mzFZKuvAf70IeiDRdBvjzSwz6MAUtpwQWzNPvDsJuO5k8gkaOA7Fa_a2dG8nDPcaKY4G336dGa1m3GJk9u4ByOgvv6KYOho8CDgkkVavG98XgRAaZKxgfHn3Ss1RSa15u3LttO7N5JDR1V1I_trm3VakaKySOBuiabA&lib=MnKK_7MPLLmiEgTypErxhFH-zIEpQ-sDt"; 
+
+// BANCO DE USUÁRIOS COM MATRIZ DE SETORES PARAMETRIZADA
+let USUARIOS_PERMITIDOS = {
+  "danilo": { senha: "123", setor: "Administrador" },
+  "admin": { senha: "futfanatics", setor: "Administrador" }
+};
+
+// SETORES HOMOLOGADOS OPERACIONAIS
+let SETORES_OPERACIONAIS = ["Administrador", "Setor Full", "Setor Inventário", "Setor Expedição", "HUB SP"];
+
+let registros = [];
+let filtroAtivo = 'todos';
+let paginaAtual = 1;
+const LINHAS_POR_PAGINA = 20;
+let acaoConfirmacaoPendente = null;
+let idxExclusaoPendente = null;
+
+const LOGOS = {
+  'Mercado Livre': 'https://logodownload.org/wp-content/uploads/2016/08/mercado-livre-logo-8.png',
+  'Shopee': 'https://logodownload.org/wp-content/uploads/2021/03/shopee-logo.png'
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+  atualizarSelectSetores();
+  carregarUsuariosDoSheets();
+});
+
+function atualizarSelectSetores() {
+  const select = document.getElementById('admNovoSetor');
+  if(!select) return;
+  select.innerHTML = '';
+  SETORES_OPERACIONAIS.forEach(setor => {
+    let opt = document.createElement('option');
+    opt.value = setor;
+    opt.textContent = setor;
+    select.appendChild(opt);
+  });
+}
+
+function adicionarSetorOperacional() {
+  const nomeSetor = document.getElementById('admNomeNovoSetor').value.trim();
+  if(!nomeSetor) {
+    showToast("Digite o nome do novo setor.", "danger");
+    return;
+  }
+  if(SETORES_OPERACIONAIS.includes(nomeSetor)) {
+    showToast("Este setor já está cadastrado.", "danger");
+    return;
+  }
+  SETORES_OPERACIONAIS.push(nomeSetor);
+  atualizarSelectSetores();
+  document.getElementById('admNomeNovoSetor').value = '';
+  showToast(`Setor "${nomeSetor}" adicionado com sucesso!`);
+}
+
+function toggleDropdown(event) {
+  event.stopPropagation();
+  const menu = document.getElementById('userDropdownMenu');
+  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+
+function fecharDropdown() {
+  const menu = document.getElementById('userDropdownMenu');
+  if(menu) menu.style.display = 'none';
+}
+
+window.addEventListener('click', () => { fecharDropdown(); });
+
+function carregarUsuariosDoSheets() {
+  if (!SCRIPT_URL || SCRIPT_URL.startsWith("SUA_NOVA_SCRIPT")) {
+    renderUsuariosAdmin();
+    return;
+  }
+  fetch(SCRIPT_URL + "?tipo=usuarios")
+    .then(res => res.json())
+    .then(dados => {
+      if(Array.isArray(dados)) {
+        USUARIOS_PERMITIDOS = { 
+          "danilo": { senha: "123", setor: "Administrador" }, 
+          "admin": { senha: "futfanatics", setor: "Administrador" } 
+        };
+        dados.forEach(item => {
+          if (item.usuario) {
+            let userTratado = String(item.usuario).toLowerCase().trim();
+            USUARIOS_PERMITIDOS[userTratado] = {
+              senha: String(item.senha).trim(),
+              setor: item.setor || "Setor Full"
+            };
+            if(item.setor && !SETORES_OPERACIONAIS.includes(item.setor)) {
+              SETORES_OPERACIONAIS.push(item.setor);
+            }
+          }
+        });
+        atualizarSelectSetores();
+        renderUsuariosAdmin();
+      }
+    })
+    .catch(err => console.error("Erro ao carregar banco de logins:", err));
+}
+
+function renderUsuariosAdmin() {
+  const tbody = document.getElementById('tbodyUsuariosAdmin');
+  if(!tbody) return;
+  tbody.innerHTML = '';
+  Object.keys(USUARIOS_PERMITIDOS).forEach((user, index) => {
+    const dadosObj = USUARIOS_PERMITIDOS[user];
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #eee';
+    
+    const ehMestre = (user === 'danilo' || user === 'admin');
+    const btnExcluir = ehMestre ? '' : `<button onclick="deletarUsuarioBD('${user}')" style="background:#c0392b; padding:4px 8px; font-size:11px; margin:0; width:auto;">🗑️ Remover</button>`;
+    
+    tr.innerHTML = `
+      <td style="padding:8px; font-weight:bold; color:#192C53;" class="td-user-name">${user.toUpperCase()}</td>
+      <td style="padding:8px; font-size:11px; color:#555;">${dadosObj.setor}</td>
+      <td style="padding:8px; display:flex; align-items:center; gap:6px; justify-content:center;">
+        <input type="password" id="pass_user_${index}" value="${dadosObj.senha}" readonly style="width:90px; padding:2px; margin:0; font-size:12px; border:none; background:transparent; font-weight:bold; text-align:center;">
+        <button onclick="toggleOlhinhoUser(${index})" style="background:none; color:#192C53; padding:0; margin:0; width:auto; border:none; font-size:12px;" id="btn_olho_${index}">👁️</button>
+      </td>
+      <td style="padding:8px;">
+        <div style="display:flex; gap:4px; justify-content:center;">
+          <button onclick="alterarSenhaUsuarioBD('${user}')" style="background:#2a7ab0; padding:2px 6px; font-size:10px; margin:0; width:auto;">✏️ Senha</button>
+          ${btnExcluir}
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function filtrarUsuariosAdmin() {
+  const termo = document.getElementById('filtroAdminUsuarios').value.toLowerCase();
+  const trs = document.getElementById('tbodyUsuariosAdmin').getElementsByTagName('tr');
+  for (let tr of trs) {
+    const nomeUser = tr.querySelector('.td-user-name').textContent.toLowerCase();
+    tr.style.display = nomeUser.includes(termo) ? '' : 'none';
+  }
+}
+
+function toggleOlhinhoUser(idx) {
+  const input = document.getElementById(`pass_user_${idx}`);
+  const btn = document.getElementById(`btn_olho_${idx}`);
+  if(input.type === "password") {
+    input.type = "text";
+    btn.textContent = "🙈";
+  } else {
+    input.type = "password";
+    btn.textContent = "👁️";
+  }
+}
+
+function toggleOlhinhoNovoUser() {
+  const input = document.getElementById('admNovaSenha');
+  const btn = document.getElementById('btn_olho_novo');
+  if(input.type === "password") {
+    input.type = "text";
+    btn.textContent = "🙈";
+  } else {
+    input.type = "password";
+    btn.textContent = "👁️";
+  }
+}
+
+function abrirAdminModal() {
+  const u = (sessionStorage.getItem('usuarioLogado') || "").toLowerCase();
+  fecharDropdown();
+  if (USUARIOS_PERMITIDOS[u] && USUARIOS_PERMITIDOS[u].setor === "Administrador") {
+    document.getElementById('adminModal').style.display = 'flex';
+    document.getElementById('filtroAdminUsuarios').value = '';
+    renderUsuariosAdmin();
+  } else {
+    showToast("Acesso restrito apenas a Administradores!", "danger");
+  }
+}
+
+function fecharAdminModal() { document.getElementById('adminModal').style.display = 'none'; }
+
+function perguntarConfirmacao(titulo, mensagem, callback) {
+  document.getElementById('confirmTitle').innerHTML = titulo;
+  document.getElementById('confirmMessage').innerHTML = mensagem;
+  acaoConfirmacaoPendente = callback;
+  document.getElementById('confirmModal').style.display = 'flex';
+}
+
+function responderConfirmacao(aceito) {
+  document.getElementById('confirmModal').style.display = 'none';
+  if (aceito && acaoConfirmacaoPendente) {
+    acaoConfirmacaoPendente();
+  }
+  acaoConfirmacaoPendente = null;
+}
+
+function efetuarLogin() {
+  const u = document.getElementById('loginUser').value.trim().toLowerCase();
+  const s = document.getElementById('loginPass').value.trim();
+  
+  if (USUARIOS_PERMITIDOS[u] && String(USUARIOS_PERMITIDOS[u].senha) === s) {
+    sessionStorage.setItem('usuarioLogado', u.toUpperCase());
+    sessionStorage.setItem('setorLogado', USUARIOS_PERMITIDOS[u].setor);
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('mainContainer').style.display = 'block';
+    document.getElementById('userInfoHeader').textContent = `${u.toUpperCase()} [${USUARIOS_PERMITIDOS[u].setor}]`;
+    
+    if (USUARIOS_PERMITIDOS[u].setor === "Administrador") {
+      document.getElementById('gearAdmin').style.display = 'block';
+      document.getElementById('blocoCadastroLote').style.display = 'block';
+    } else {
+      document.getElementById('gearAdmin').style.display = 'none';
+      if(USUARIOS_PERMITIDOS[u].setor !== "Setor Full") {
+         document.getElementById('blocoCadastroLote').style.display = 'none';
+      } else {
+         document.getElementById('blocoCadastroLote').style.display = 'block';
+      }
+    }
+    
+    showToast(`Bem-vindo, ${u.toUpperCase()}!`);
+    carregarDadosDoGoogleSheets();
+  } else {
+    document.getElementById('loginErrorModal').style.display = 'flex';
+  }
+}
+
+function fecharLoginErrorModal() {
+  document.getElementById('loginErrorModal').style.display = 'none';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginPass').focus();
+}
+
+function efetuarLogout() {
+  fecharDropdown();
+  sessionStorage.clear();
+  document.getElementById('mainContainer').style.display = 'none';
+  document.getElementById('gearAdmin').style.display = 'none';
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  showToast("Sessão encerrada com sucesso.", "danger");
+}
+
+function getUsuarioAtual() { return sessionStorage.getItem('usuarioLogado') || "SISTEMA"; }
+function getSetorAtual() { return sessionStorage.getItem('setorLogado') || "OPERADOR"; }
+
+function showToast(mensagem, tipo = 'success') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${tipo}`;
+  toast.innerHTML = tipo === 'success' ? `✅ ${mensagem}` : `❌ ${mensagem}`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+function cadastrarNovoUsuarioBD() {
+  const novoU = document.getElementById('admNovoUser').value.trim().toLowerCase();
+  const novaS = document.getElementById('admNovaSenha').value.trim();
+  const setorS = document.getElementById('admNovoSetor').value;
+  if(!novoU || !novaS) { 
+    showToast('Preencha os campos de Usuário e Senha.', 'danger'); 
+    return;
+  }
+  
+  perguntarConfirmacao(
+    "🔑 Cadastrar Operador",
+    `Confirma o cadastro do usuário <b>${novoU.toUpperCase()}</b> para o setor <b>${setorS}</b>?`,
+    () => {
+      USUARIOS_PERMITIDOS[novoU] = { senha: novaS, setor: setorS };
+      enviarParaGoogleSheets({ novoUsuario: novoU, novaSenha: novaS, setor: setorS }, "salvar_usuario");
+      
+      document.getElementById('admNovoUser').value = '';
+      document.getElementById('admNovaSenha').value = '';
+      showToast(`Usuário ${novoU.toUpperCase()} registrado com sucesso!`);
+      renderUsuariosAdmin();
+      setTimeout(carregarUsuariosDoSheets, 1500);
+    }
+  );
+}
+
+// MATRIZ RESTRETA DE ACESSOS E ETAPAS POR SETOR OPERACIONAL
+function verificarPermissaoFluxo(statusDestino) {
+  const setor = getSetorAtual();
+  if(setor === "Administrador") return true;
+  
+  if(setor === "Setor Full") {
+     return ["Apta para separação", "Aguardando Reabastecimento", "Cancelado", "Em separação"].includes(statusDestino);
+  }
+  if(setor === "Setor Inventário" || setor === "Setor Inventario") {
+     return ["Em conferência"].includes(statusDestino);
+  }
+  if(setor === "Setor Expedição") {
+     return ["Em Expedição", "Em transferência", "Coletado"].includes(statusDestino);
+  }
+  if(setor === "HUB SP") {
+     return ["Recebidas HUB SP", "Coletado"].includes(statusDestino);
+  }
+  return false;
+}
+
+function carregarDadosDoGoogleSheets() {
+  if(!sessionStorage.getItem('usuarioLogado')) return;
+  const statusEl = document.getElementById('loadingStatus');
+  statusEl.style.display = 'block';
+  statusEl.textContent = "🔄 Conectando ao Banco de Dados...";
+  
+  fetch(SCRIPT_URL)
+    .then(response => response.json())
+    .then(dados => {
+      if (Array.isArray(dados)) {
+        registros = dados.map(r => {
+          if(!r.status || r.status.trim() === '' || r.status === '-') r.status = 'A processar';
+          r.sep_interna = r.sep_interna || 'Pendente';
+          r.sep_externa = r.sep_externa || 'Pendente';
+          r.coleta = formatarDataEHora(r.coleta);
+          r.embarque = formatarDataEHora(r.embarque);
+          r.embarque_full = formatarDataEHora(r.embarque_full);
+          r.ultima_movimentacao = formatarDataEHora(r.ultima_movimentacao);
+          
+          // Tratamento preventivo das novas colunas de auditoria
+          r.id = r.id || '';
+          r.usuario_que_cadastrou = r.usuario_que_cadastrou || r.usuario || '-';
+          r.usuario_que_finalizou_interna = r.usuario_que_finalizou_interna || '';
+          r.usuario_que_finalizou_externa = r.usuario_que_finalizou_externa || '';
+          r.usuario_que_embarcou = r.usuario_que_embarcou || '';
+          r.usuario_que_expediu = r.usuario_que_expediu || '';
+          r.status_apta_para_separacao = r.status_apta_para_separacao || '';
+          r.usuario_que_colocou_apta = r.usuario_que_colocou_apta || '';
+          r.ag_reabastecimento = r.ag_reabastecimento || '';
+          r.usuario_que_enviou_para_reabastecimento = r.usuario_que_enviou_para_reabastecimento || '';
+          r.em_separacao = r.em_separacao || '';
+          r.usuario_que_liberou_a_separacao = r.usuario_que_liberou_a_separacao || '';
+          r.em_conferencia = r.em_conferencia || '';
+          r.usuario_que_enviou_para_conferencia = r.usuario_que_enviou_para_conferencia || '';
+          r.em_expedicao = r.em_expedicao || '';
+          r.usuario_que_liberou_para_expedicao = r.usuario_que_liberou_para_expedicao || '';
+          r.em_transferencia = r.em_transferencia || '';
+          r.usuario_que_realizou_a_transferencia = r.usuario_que_realizou_a_transferencia || '';
+          r.recebido_no_hubsp = r.recebido_no_hubsp || '';
+          r.usuario_que_recebeu_hub_sp = r.usuario_que_recebeu_hub_sp || '';
+          r.coletado = r.coletado || '';
+          r.usuario_que_realizou_a_expedicao_para_full = r.usuario_que_realizou_a_expedicao_para_full || '';
+          return r;
+        });
+        statusEl.style.display = 'none';
+      }
+      render();
+    })
+    .catch(err => {
+      console.error(err);
+      statusEl.textContent = "⚠️ Simulando estrutura local ou erro de conexão.";
+      render();
+    });
+}
+
+function enviarParaGoogleSheets(dados, acao = "salvar") {
+  if (!SCRIPT_URL || SCRIPT_URL.startsWith("SUA_NOVA_SCRIPT")) return;
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ ...dados, acao: acao })
+  }).catch(e => console.error("Erro na requisição Fetch:", e));
+}
+
+function setFiltro(f){
+  filtroAtivo = f;
+  paginaAtual = 1; 
+  document.querySelectorAll('.card').forEach(c=>c.classList.toggle('ativo', c.dataset.filtro===f));
+  render();
+}
+
+function resetarPaginaERender() { paginaAtual = 1; render(); }
+
+function agoraBR(){
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function dataHojeBR(){
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+function converterInputParaBR(dataInput) {
+  if(!dataInput) return "";
+  if(dataInput.includes('/')) return dataInput;
+  const partes = dataInput.split('-');
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+function converterBRParaInput(dataBR) {
+  if(!dataBR || !dataBR.includes('/')) return "";
+  const apenasData = dataBR.split(' ')[0];
+  const partes = apenasData.split('/');
+  return `${partes[2]}-${partes[1]}-${partes[0]}`;
+}
+
+function formatarDataEHora(valor) {
+  if (!valor || valor.trim() === "" || valor === "-") return "-";
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(valor) || /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/.test(valor)) return valor;
+  const d = new Date(valor);
+  if (isNaN(d.getTime())) return valor;
+  const dia = String(d.getDate()).padStart(2, '0');
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const ano = d.getFullYear();
+  return `${dia}/${mes}/${ano}`;
+}
+
+function cadastrarNovo(){
+  const envio    = document.getElementById('fEnvio').value.trim();
+  const nf       = document.getElementById('fNF').value.trim();
+  const transp   = document.getElementById('fTransp').value;
+  const destino  = document.getElementById('fDestino').value;
+  const colInput = document.getElementById('fColeta').value;
+  
+  if(!colInput){ showToast('A data da Coleta Full é obrigatória!', 'danger'); return; }
+  if(!envio || !nf || !transp){ showToast('Preencha Envio, NF e Transportadora.', 'danger'); return; }
+
+  const duplicado = registros.some(r => String(r.envio) === String(envio));
+  if(duplicado) {
+     showToast(`O Número de Envio Full ${envio} já existe no sistema!`, 'danger');
+     return;
+  }
+
+  const reg = { 
+    id: String(Date.now()), envio: envio, nf: nf, transportadora: transp, destino: destino,
+    coleta: converterInputParaBR(colInput), usuario_que_cadastrou: getUsuarioAtual(),
+    sep_interna: 'Pendente', usuario_que_finalizou_interna: '',
+    sep_externa: 'Pendente', usuario_que_finalizou_externa: '',
+    embarque: '', usuario_que_embarcou: '',
+    embarque_full: '', usuario_que_expediu: '',
+    status_apta_para_separacao: '', usuario_que_colocou_apta: '',
+    ag_reabastecimento: '', usuario_que_enviou_para_reabastecimento: '',
+    em_separacao: '', usuario_que_liberou_a_separacao: '',
+    em_conferencia: '', usuario_que_enviou_para_conferencia: '',
+    em_expedicao: '', usuario_que_liberou_para_expedicao: '',
+    em_transferencia: '', usuario_que_realizou_a_transferencia: '',
+    recebido_no_hubsp: '', usuario_que_recebeu_hub_sp: '',
+    coletado: '', usuario_que_realizou_a_expedicao_para_full: '',
+    status: 'A processar', usuario: getUsuarioAtual(), ultima_movimentacao: agoraBR() 
+  };
+  
+  registros.unshift(reg); 
+  enviarParaGoogleSheets(reg, "salvar"); 
+  
+  document.getElementById('fEnvio').value = '';
+  document.getElementById('fNF').value = '';
+  document.getElementById('fColeta').value = '';
+  resetarPaginaERender();
+  showToast("Novo lote adicionado como 'A processar'!");
+}
+
+function editar(idx){
+  if(getSetorAtual() !== "Administrador") { showToast("Apenas administradores podem editar registros.", "danger"); return; }
+  const r = registros[idx];
+  document.getElementById('modalId').value       = idx;
+  document.getElementById('modalEnvio').value    = r.envio || '';
+  document.getElementById('modalNF').value       = r.nf || '';
+  document.getElementById('modalTransp').value   = r.transportadora || '';
+  document.getElementById('modalDestino').value  = r.destino || 'São Paulo';
+  document.getElementById('modalColeta').value   = converterBRParaInput(r.coleta);
+  document.getElementById('modalEmbarque').value = converterBRParaInput(r.embarque);
+  document.getElementById('modalEmbarqueFull').value = converterBRParaInput(r.embarque_full);
+  document.getElementById('modalStatus').value   = r.status || 'A processar'; 
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+function fecharModal(){ document.getElementById('editModal').style.display = 'none'; }
+
+function salvarEdicaoModal(){
+  const idx = document.getElementById('modalId').value;
+  const r = registros[idx];
+  perguntarConfirmacao(
+    "✏️ Confirmar Alterações",
+    `Deseja salvar as edições manuais feitas no envio <b>${r.envio}</b>?`,
+    () => {
+      r.envio = document.getElementById('modalEnvio').value.trim();
+      r.nf = document.getElementById('modalNF').value.trim();
+      r.transportadora = document.getElementById('modalTransp').value;
+      r.destino = document.getElementById('modalDestino').value;
+      r.coleta = converterInputParaBR(document.getElementById('modalColeta').value);
+      r.embarque = converterInputParaBR(document.getElementById('modalEmbarque').value);
+      r.embarque_full = converterInputParaBR(document.getElementById('modalEmbarqueFull').value);
+      r.status = document.getElementById('modalStatus').value; 
+      r.usuario = getUsuarioAtual();
+      r.ultima_movimentacao = agoraBR();
+
+      enviarParaGoogleSheets(r, "editar"); 
+      fecharModal();
+      render();
+      showToast("Cadastro alterado!");
+    }
+  );
+}
+
+function avancarEsteira(idx, proximoStatus) {
+  if(!verificarPermissaoFluxo(proximoStatus)) {
+     showToast("Seu setor não possui autorização para este status.", "danger");
+     return;
+  }
+  const r = registros[idx];
+  
+  perguntarConfirmacao(
+    "🔄 Mudar Status do Envio",
+    `Deseja mover o envio <b>${r.envio}</b> para <b>${proximoStatus}</b>?`,
+    () => {
+      r.status = proximoStatus;
+      r.usuario = getUsuarioAtual();
+      r.ultima_movimentacao = agoraBR();
+      
+      // ALIMENTAÇÃO DINÂMICA DAS COLUNAS DE AUDITORIA DE CADA CARD DO KANBAN
+      if (proximoStatus === 'Apta para separação') {
+         r.status_apta_para_separacao = dataHojeBR();
+         r.usuario_que_colocou_apta = getUsuarioAtual();
+      } else if (proximoStatus === 'Aguardando Reabastecimento') {
+         r.ag_reabastecimento = dataHojeBR();
+         r.usuario_que_enviou_para_reabastecimento = getUsuarioAtual();
+      } else if (proximoStatus === 'Em separação') {
+         r.em_separacao = dataHojeBR();
+         r.usuario_que_liberou_a_separacao = getUsuarioAtual();
+      } else if (proximoStatus === 'Em conferência') {
+         r.em_conferencia = dataHojeBR();
+         r.usuario_que_enviou_para_conferencia = getUsuarioAtual();
+      } else if (proximoStatus === 'Em Expedição') {
+         r.em_expedicao = dataHojeBR();
+         r.usuario_que_liberou_para_expedicao = getUsuarioAtual();
+      } else if (proximoStatus === 'Em transferência') {
+         r.em_transferencia = dataHojeBR();
+         r.usuario_que_realizou_a_transferencia = getUsuarioAtual();
+         r.embarque = dataHojeBR();
+         r.usuario_que_embarcou = getUsuarioAtual();
+      } else if (proximoStatus === 'Recebidas HUB SP') {
+         r.recebido_no_hubsp = dataHojeBR();
+         r.usuario_que_recebeu_hub_sp = getUsuarioAtual();
+      } else if (proximoStatus === 'Coletado') {
+         r.coletado = dataHojeBR();
+         r.usuario_que_realizou_a_expedicao_para_full = getUsuarioAtual();
+         r.embarque_full = dataHojeBR();
+         r.usuario_que_expediu = getUsuarioAtual();
+         
+         if(r.destino === "Presidente Prudente") {
+            r.embarque = dataHojeBR();
+            r.usuario_que_embarcou = getUsuarioAtual();
+            r.em_transferencia = dataHojeBR();
+            r.usuario_que_realizou_a_transferencia = getUsuarioAtual();
+         }
+      }
+      
+      enviarParaGoogleSheets(r, "editar");
+      render();
+      showToast(`Movido para: ${proximoStatus}`);
+    }
+  );
+}
+
+function alterarSubSeparacao(idx, tipo) {
+  if(!verificarPermissaoFluxo("Em separação")) {
+     showToast("Seu setor não pode gerenciar a separação.", "danger");
+     return;
+  }
+  const r = registros[idx];
+  perguntarConfirmacao(
+     "📦 Finalizar Etapa",
+     `Confirmar conclusão da Separação <b>${tipo.toUpperCase()}</b> do envio ${r.envio}?`,
+     () => {
+        if(tipo === 'interna') {
+           r.sep_interna = 'Finalizada';
+           r.usuario_que_finalizou_interna = getUsuarioAtual();
+        }
+        if(tipo === 'externa') {
+           r.sep_externa = 'Finalizada';
+           r.usuario_que_finalizou_externa = getUsuarioAtual();
+        }
+        
+        if(r.sep_interna === 'Finalizada' && r.sep_externa === 'Finalizada') {
+           r.status = "Separação Concluída";
+        }
+        
+        r.usuario = getUsuarioAtual();
+        r.ultima_movimentacao = agoraBR();
+        enviarParaGoogleSheets(r, "editar");
+        render();
+        showToast(`Separação ${tipo} concluída!`);
+     }
+  );
+}
+
+function excluir(idx){
+  idxExclusaoPendente = idx;
+  document.getElementById('authDeletePass').value = '';
+  document.getElementById('deleteAuthModal').style.display = 'flex';
+}
+
+function fecharDeleteAuthModal() {
+  document.getElementById('deleteAuthModal').style.display = 'none';
+  idxExclusaoPendente = null;
+}
+
+function confirmarExclusaoComSenha() {
+  const senhaDigitada = document.getElementById('authDeletePass').value;
+  const usuarioLogado = getUsuarioAtual().toLowerCase();
+  
+  if(USUARIOS_PERMITIDOS[usuarioLogado] && USUARIOS_PERMITIDOS[usuarioLogado].setor === "Administrador" && USUARIOS_PERMITIDOS[usuarioLogado].senha === senhaDigitada) {
+      const idx = idxExclusaoPendente;
+      enviarParaGoogleSheets(registros[idx], "deletar");
+      registros.splice(idx,1);
+      fecharDeleteAuthModal();
+      render();
+      showToast("Registro excluído permanentemente do banco.", "danger");
+  } else {
+      showToast("Senha do Administrador inválida ou incorreta!", "danger");
+  }
+}
+
+function diasAteColeta(dataBR){
+  if(!dataBR || !dataBR.includes('/')) return 999;
+  const partes = dataBR.split(' ')[0].split('/');
+  const dt = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T00:00:00`);
+  if(isNaN(dt.getTime())) return 999;
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  return Math.floor((dt - hoje)/(1000*60*60*24));
+}
+
+function renderTransp(nome){
+  const url = LOGOS[nome];
+  return url ? `<img class="logo-transp" src="${url}" alt="${nome}">` : (nome || '-');
+}
+
+function obterRegistrosFiltrados() {
+  const termo = document.getElementById('busca').value.toLowerCase();
+  const dInicio = document.getElementById('filtroDataInicio').value; 
+  const dFim = document.getElementById('filtroDataFim').value;
+
+  return registros.map((reg, originalIdx) => ({ ...reg, originalIdx })).filter(r => {
+    const d = diasAteColeta(r.coleta);
+    const emAlerta = r.status !== 'Coletado' && r.status !== 'Cancelado' && d <= 4;
+    
+    if(filtroAtivo === 'alerta' && !emAlerta) return false;
+    if(filtroAtivo !== 'todos' && filtroAtivo !== 'alerta' && r.status !== filtroAtivo) return false;
+    
+    if (dInicio || dFim) {
+      const dataRegIso = converterBRParaInput(r.coleta);
+      if (dInicio && dataRegIso < dInicio) return false;
+      if (dFim && dataRegIso > dFim) return false;
+    }
+
+    const blob = `${r.envio} ${r.nf} ${r.transportadora} ${r.destino} ${r.status} ${r.usuario} ${r.coleta}`.toLowerCase();
+    return !(termo && !blob.includes(termo));
+  });
+}
+
+// MAPEAMENTO COMPLETO DE DOWNLOAD CONTENDO AS 31 COLUNAS DA PLANILHA DO SHEETS
+function exportarExcel() {
+  const filtrados = obterRegistrosFiltrados();
+  if(filtrados.length === 0) { showToast("Nenhum dado para exportar.", "danger"); return; }
+
+  perguntarConfirmacao(
+    "📊 Exportar Excel",
+    `Deseja baixar o relatório contendo <b>${filtrados.length}</b> registro(s)?`,
+    () => {
+      const dadosExportacao = filtrados.map(r => ({
+        "ID": r.id || "-",
+        "ENVIO": r.envio || "-",
+        "NF": r.nf || "-",
+        "TRANSPORTADORA": r.transportadora || "-",
+        "DESTINO": r.destino || "-",
+        "COLETA FULL": r.coleta || "-",
+        "USUARIO QUE CADASTROU": r.usuario_que_cadastrou || "-",
+        "SEPARAÇÃO INTERNA": r.sep_interna || "Pendente",
+        "USUARIO QUE FINALIZOU INTERNA": r.usuario_que_finalizou_interna || "-",
+        "SEPARAÇÃO EXTERNA": r.sep_externa || "Pendente",
+        "USUARIO QUE FINALIZOU EXTERNA": r.usuario_que_finalizou_externa || "-",
+        "EMBARQUE FUTFANATICS": r.embarque || "-",
+        "USUARIO QUE EMBARCOU": r.usuario_que_embarcou || "-",
+        "EMBARQUE FULL": r.embarque_full || "-",
+        "USUARIO QUE EXPEDIU": r.usuario_que_expediu || "-",
+        "STATUS APTA PARA SEPARAÇÃO": r.status_apta_para_separacao || "-",
+        "USUARIO QUE COLOCOU APTA": r.usuario_que_colocou_apta || "-",
+        "AG. REABASTECIMENTO": r.ag_reabastecimento || "-",
+        "USUARIO QUE ENVIOU PARA REABASTECIMENTO": r.usuario_que_enviou_para_reabastecimento || "-",
+        "EM SEPARAÇÃO": r.em_separacao || "-",
+        "USUARIO QUE LIBEROU A SEPARAÇÃO": r.usuario_que_liberou_a_separacao || "-",
+        "EM CONFERENCIA": r.em_conferencia || "-",
+        "USUARIO QUE ENVIOU PARA CONFERENCIA": r.usuario_que_enviou_para_conferencia || "-",
+        "EM EXPEDIÇÃO": r.em_expedicao || "-",
+        "USUARIO QUE LIBEROU PARA EXPEDIÇÃO": r.usuario_que_liberou_para_expedicao || "-",
+        "EM TRANSFERENCIA": r.em_transferencia || "-",
+        "USUARIO QUE REALIZOU A TRANSFERENCIA": r.usuario_que_realizou_a_transferencia || "-",
+        "RECEBIDO NO HUBSP": r.recebido_no_hubsp || "-",
+        "USUARIO QUE RECEBEU HUB SP": r.usuario_que_recebeu_hub_sp || "-",
+        "COLETADO": r.coletado || "-",
+        "USUARIO QUE REALIZOU A EXPEDIÇÃO PARA FULL": r.usuario_que_realizou_a_expedicao_para_full || "-"
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(dadosExportacao);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "FutLog_Registros");
+      XLSX.writeFile(wb, "Relatorio_FutLog_Full.xlsx");
+      showToast("Arquivo Excel gerado!");
+    }
+  );
+}
+
+function paginaAnterior() { if(paginaAtual > 1) { paginaAtual--; render(); } }
+function proximaPagina() { 
+  const filtrados = obterRegistrosFiltrados();
+  const maxPaginas = Math.ceil(filtrados.length / LINHAS_POR_PAGINA); 
+  if(paginaAtual < maxPaginas) { paginaAtual++; render(); } 
+}
+function irParaPagina(num) { paginaAtual = num; render(); }
+
+function render(){
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  let tot=0, pad=0, rea=0, can=0, apt=0, sep=0, sepconcl=0, con=0, exp=0, trans=0, hub=0, col=0, atr=0;
+  
+  registros.forEach(r => {
+    tot++;
+    const d = diasAteColeta(r.coleta);
+    if(r.status !== 'Coletado' && r.status !== 'Cancelado' && d <= 4) atr++;
+    if(r.status === 'A processar') pad++;
+    else if(r.status === 'Aguardando Reabastecimento') rea++;
+    else if(r.status === 'Cancelado') can++;
+    else if(r.status === 'Apta para separação') apt++;
+    else if(r.status === 'Em separação') sep++;
+    else if(r.status === 'Separação Concluída') sepconcl++;
+    else if(r.status === 'Em conferência') con++;
+    else if(r.status === 'Em Expedição') exp++;
+    else if(r.status === 'Em transferência') trans++;
+    else if(r.status === 'Recebidas HUB SP') hub++;
+    else if(r.status === 'Coletado') col++;
+  });
+  
+  document.getElementById('cTotal').textContent = tot;
+  document.getElementById('cPad').textContent   = pad;
+  document.getElementById('cRea').textContent   = rea;
+  document.getElementById('cCanc').textContent  = can;
+  document.getElementById('cApt').textContent   = apt;
+  document.getElementById('cSep').textContent   = sep;
+  document.getElementById('cSepConcl').textContent = sepconcl;
+  document.getElementById('cConf').textContent  = con;
+  document.getElementById('cExp').textContent   = exp;
+  document.getElementById('cTransp').textContent = trans;
+  document.getElementById('cHubSp').textContent = hub;
+  document.getElementById('cCol').textContent   = col;
+  document.getElementById('cAtr').textContent   = atr;
+
+  const filtrados = obterRegistrosFiltrados();
+  const totalFiltrados = filtrados.length;
+  const maxPaginas = Math.ceil(totalFiltrados / LINHAS_POR_PAGINA) || 1;
+  if(paginaAtual > maxPaginas) paginaAtual = maxPaginas;
+  
+  const indiceInicial = (paginaAtual - 1) * LINHAS_POR_PAGINA;
+  const indiceFinal = Math.min(indiceInicial + LINHAS_POR_PAGINA, totalFiltrados);
+  const daPagina = filtrados.slice(indiceInicial, indiceFinal);
+  
+  daPagina.forEach((r) => {
+    const tr = document.createElement('tr');
+    let classeStatus = 'status-padrao';
+    if(r.status === 'Aguardando Reabastecimento') classeStatus = 'status-reabast';
+    if(r.status === 'Cancelado') classeStatus = 'status-canc';
+    if(r.status === 'Apta para separação') classeStatus = 'status-apta';
+    if(r.status === 'Em separação') classeStatus = 'status-separacao';
+    if(r.status === 'Separação Concluída') classeStatus = 'status-sepconcl';
+    if(r.status === 'Em conferência') classeStatus = 'status-conferencia';
+    if(r.status === 'Em Expedição') classeStatus = 'status-expedicao';
+    if(r.status === 'Em transferência') classeStatus = 'status-transferencia';
+    if(r.status === 'Recebidas HUB SP') classeStatus = 'status-hubsp';
+    if(r.status === 'Coletado') classeStatus = 'status-coletado';
+    tr.className = classeStatus;
+
+    if(r.status !== 'Coletado' && r.status !== 'Cancelado') {
+      const dias = diasAteColeta(r.coleta);
+      if(dias <= 2) tr.classList.add('alerta-piscante'); 
+      else if(dias <= 4) tr.classList.add('alerta-critico'); 
+    }
+
+    let bAcao = '';
+    if(r.status === 'A processar') {
+      bAcao = `
+        <button title="Mudar status para Apta para Separação" style="background:#4a148c" onclick="avancarEsteira(${r.originalIdx}, 'Apta para separação')">✔️ Apta para separação</button>
+        <button title="Colocar lote em espera por Reabastecimento" style="background:#0d47a1" onclick="avancarEsteira(${r.originalIdx}, 'Aguardando Reabastecimento')">⏳ Ag. Reabastecimento</button>
+        <button title="Cancelar Envio definitivamente" style="background:#b71c1c" onclick="avancarEsteira(${r.originalIdx}, 'Cancelado')">❌ Cancelado</button>
+      `;
+    } else if(r.status === 'Aguardando Reabastecimento' || r.status === 'Cancelado') {
+      bAcao = `<button title="Retornar para esteira de Separação" style="background:#4a148c" onclick="avancarEsteira(${r.originalIdx}, 'Apta para separação')">✔️ Apta para separação</button>`;
+    } else if(r.status === 'Apta para separação') {
+      bAcao = `<button title="Iniciar o processo de separação de mercadorias" style="background:#e65100" onclick="avancarEsteira(${r.originalIdx}, 'Em separação')">📦 Em separação</button>`;
+    } else if(r.status === 'Em separação') {
+      let bInt = r.sep_interna==='Pendente' ? `<button title="Concluir a Separação Interna do Lote" style="background:#0288d1; font-size:9px;" onclick="alterarSubSeparacao(${r.originalIdx}, 'interna')">🏠 Interna Fin.</button>` : '';
+      let bExt = r.sep_externa==='Pendente' ? `<button title="Concluir a Separação Externa do Lote" style="background:#512da8; font-size:9px;" onclick="alterarSubSeparacao(${r.originalIdx}, 'externa')">🏢 Externa Fin.</button>` : '';
+      bAcao = bInt + bExt;
+    } else if(r.status === 'Separação Concluída') {
+      bAcao = `<button title="Enviar para auditoria e conferência" style="background:#f57f17; color:#111" onclick="avancarEsteira(${r.originalIdx}, 'Em conferência')">🔍 Em conferência</button>`;
+    } else if(r.status === 'Em conferência') {
+      bAcao = `<button title="Enviar para a doca de expedição" style="background:#33691e" onclick="avancarEsteira(${r.originalIdx}, 'Em Expedição')">🚚 Em Expedição</button>`;
+    } else if(r.status === 'Em Expedição') {
+      if(r.destino === "Presidente Prudente") {
+         bAcao = `<button title="Lote com destino Próprio: Finalizar direto como Coletado" style="background:#004d40" onclick="avancarEsteira(${r.originalIdx}, 'Coletado')">🚀 Coletado</button>`;
+      } else {
+         bAcao = `<button title="Despachar mercadoria rumo ao HUB em São Paulo" style="background:#f57c00" onclick="avancarEsteira(${r.originalIdx}, 'Em transferência')">🚚 Em transferência</button>`;
+      }
+    } else if(r.status === 'Em transferência') {
+      bAcao = `<button title="Confirmar recebimento das mercadorias na filial HUB SP" style="background:#2e7d32" onclick="avancarEsteira(${r.originalIdx}, 'Recebidas HUB SP')">🏢 Recebidas HUB SP</button>`;
+    } else if(r.status === 'Recebidas HUB SP') {
+      bAcao = `<button title="Encerrar fluxo com a entrega efetuada" style="background:#004d40" onclick="avancarEsteira(${r.originalIdx}, 'Coletado')">🚀 Coletado</button>`;
+    }
+
+    let badgeStyle = 'badge-default';
+    if(r.status === 'Aguardando Reabastecimento') badgeStyle = 'badge-reabast';
+    if(r.status === 'Cancelado') badgeStyle = 'badge-canc';
+    if(r.status === 'Apta para separação') badgeStyle = 'badge-apta';
+    if(r.status === 'Em separação') badgeStyle = 'badge-separacao';
+    if(r.status === 'Separação Concluída') badgeStyle = 'badge-sepconcl';
+    if(r.status === 'Em conferência') badgeStyle = 'badge-conferencia';
+    if(r.status === 'Em Expedição') badgeStyle = 'badge-expedicao';
+    if(r.status === 'Em transferência') badgeStyle = 'badge-transferencia';
+    if(r.status === 'Recebidas HUB SP') badgeStyle = 'badge-hubsp';
+    if(r.status === 'Coletado') badgeStyle = 'badge-coletado';
+    
+    let cInt = r.sep_interna === 'Finalizada' ? 'sep-finalizada' : 'sep-pendente';
+    let cExt = r.sep_externa === 'Finalizada' ? 'sep-finalizada' : 'sep-pendente';
+
+    tr.innerHTML = `
+      <td><b>${r.envio||'-'}</b></td>
+      <td>${r.nf||'-'}</td>
+      <td>${renderTransp(r.transportadora)}</td>
+      <td><span style="font-size:11px; font-weight:bold">${r.destino||'-'}</span></td>
+      <td>${r.coleta || '-'}</td>
+      <td><span class="badge-sep-interna ${cInt}" title="Status da Separação Interna">${r.sep_interna}</span></td>
+      <td><span class="badge-sep-externa ${cExt}" title="Status da Separação Externa">${r.sep_externa}</span></td>
+      <td><b>${r.embarque || '-'}</b></td>
+      <td><b>${r.embarque_full || '-'}</b></td>
+      <td><span class="badge-status ${badgeStyle}" title="Estágio atual do lote">${r.status}</span></td>
+      <td><i style="color:#666">${r.ultima_movimentacao || '-'}</i></td>
+      <td><b>${r.usuario || '-'}</b></td>
+      <td class="actions">
+        ${bAcao}
+        <div class="actions-adm">
+          <button class="btn-edit" title="Editar propriedades cadastrais" onclick="editar(${r.originalIdx})">✏️</button>
+          <button class="btn-del" title="Apagar permanentemente" onclick="excluir(${r.originalIdx})">🗑</button>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  const exibindoDe = totalFiltrados === 0 ? 0 : indiceInicial + 1;
+  document.getElementById('paginacaoInfo').textContent = `Exibindo ${exibindoDe}-${indiceFinal} de ${totalFiltrados} registros`;
+  document.getElementById('btnAnterior').disabled = (paginaAtual === 1);
+  document.getElementById('btnProximo').disabled = (paginaAtual === maxPaginas || totalFiltrados === 0);
+
+  const containerNumeros = document.getElementById('paginacaoNumbers');
+  containerNumeros.innerHTML = '';
+  for (let i = 1; i <= maxPaginas; i++) {
+    const btnNum = document.createElement('button');
+    btnNum.textContent = i;
+    btnNum.className = `btn-pagina-num ${i === paginaAtual ? 'ativo' : ''}`;
+    btnNum.onclick = () => irParaPagina(i);
+    containerNumeros.appendChild(btnNum);
+  }
+}
+</script>
+</body>
+</html>
