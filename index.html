@@ -1310,13 +1310,13 @@ function render(){
     } else if(r.status === 'Apta para separação') {
       bAcao = `<button title="Iniciar o processo de separação de mercadorias" style="background:#e65100" onclick="avancarEsteira(${r.originalIdx}, 'Em separação')">📑 Em separação</button>`;
     } else if(r.status === 'Em separação') {
-      let bInt = r.sep_interna==='Pendente' ? `<button title="Concluir a Separação Interna do Lote" style="background:#0288d1; font-size:9px;" onclick="alterarSubSeparacao(${r.originalIdx}, 'interna')">🏠 Interna Fin.</button>` : '';
-      let bExt = r.sep_externa==='Pendente' ? `<button title="Concluir a Separação Externa do Lote" style="background:#512da8; font-size:9px;" onclick="alterarSubSeparacao(${r.originalIdx}, 'externa')">🏢 Externa Fin.</button>` : '';
+      let bInt = r.sep_interna==='Pendente' ? `<button title="Concluir a Separação Interna do Lote" style="background:#0288d1; font-size:9px;" onclick="alterarSubSeparacao(${r.originalIdx}, 'interna')"> Separação Interna Fin.</button>` : '';
+      let bExt = r.sep_externa==='Pendente' ? `<button title="Concluir a Separação Externa do Lote" style="background:#512da8; font-size:9px;" onclick="alterarSubSeparacao(${r.originalIdx}, 'externa')"> Separação Externa Fin.</button>` : '';
       bAcao = bInt + bExt;
     } else if(r.status === 'Separação Concluída') {
       bAcao = `<button title="Enviar para auditoria e conferência" style="background:#f57f17; color:#111" onclick="avancarEsteira(${r.originalIdx}, 'Em conferência')">🔍 Em conferência</button>`;
     } else if(r.status === 'Em conferência') {
-      bAcao = `<button title="Enviar para a doca de expedição" style="background:#33691e" onclick="avancarEsteira(${r.originalIdx}, 'Em Expedição')">. 📦 Em Expedição</button>`;
+      bAcao = `<button title="Enviar para a doca de expedição" style="background:#33691e" onclick="avancarEsteira(${r.originalIdx}, 'Em Expedição')"> 📦 Em Expedição</button>`;
     } else if(r.status === 'Em Expedição') {
       if(r.destino === "Presidente Prudente") {
          bAcao = `<button title="Lote com destino Próprio: Finalizar direto como Coletado" style="background:#004d40" onclick="avancarEsteira(${r.originalIdx}, 'Coletado')">🚀 Coletado</button>`;
