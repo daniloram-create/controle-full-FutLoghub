@@ -443,8 +443,8 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbygvvQC-fAdO_Rq2OAa7
 
 // BANCO DE USUÁRIOS COM MATRIZ DE SETORES PARAMETRIZADA
 let USUARIOS_PERMITIDOS = {
-  "danilo": { senha: "123", sector: "Administrador" },
-  "admin": { senha: "futfanatics", sector: "Administrador" }
+  "danilo": { senha: "123", setor: "Administrador" },
+  "admin": { senha: "futfanatics", setor: "Administrador" }
 };
 
 // SETORES HOMOLOGADOS OPERACIONAIS
@@ -686,7 +686,6 @@ function efetuarLogin() {
   }
 }
 
-// NOVA FUNÇÃO: FECHAR MODAL DE ACESSO NEGADO
 function fecharLoginErrorModal() {
   document.getElementById('loginErrorModal').style.display = 'none';
 }
@@ -755,7 +754,6 @@ function alterarSenhaUsuarioBD(user) {
   );
 }
 
-// CORRIGIDO: Nome alterado de deleteUsuarioBD para deletarUsuarioBD combinando com o botão
 function deletarUsuarioBD(user) {
   perguntarConfirmacao(
     "🗑️ Remover Usuário",
@@ -940,9 +938,10 @@ function setFiltro(f){
 
 function resetarPaginaERender() { paginaAtual = 1; render(); }
 
+// CORRIGIDO PARA FORMATO COM SEGUNDOS
 function agoraBR(){
   const d = new Date();
-  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
 }
 
 function converterInputParaBR(dataInput) {
@@ -959,15 +958,24 @@ function converterBRParaInput(dataBR) {
   return `${partes[2]}-${partes[1]}-${partes[0]}`;
 }
 
+// CORRIGIDO PARA CONVERTER O ISO COM HORAS, MINUTOS E SEGUNDOS
 function formatarDataEHora(valor) {
   if (!valor || valor.trim() === "" || valor === "-") return "-";
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(valor) || /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/.test(valor)) return valor;
+  
+  if (/^\d{2}\/\d{2}\/\d{4}/.test(valor)) return valor; 
+  
   const d = new Date(valor);
+  
   if (isNaN(d.getTime())) return valor;
+  
   const dia = String(d.getDate()).padStart(2, '0');
   const mes = String(d.getMonth() + 1).padStart(2, '0');
   const ano = d.getFullYear();
-  return `${dia}/${mes}/${ano}`;
+  const horas = String(d.getHours()).padStart(2, '0');
+  const minutos = String(d.getMinutes()).padStart(2, '0');
+  const segundos = String(d.getSeconds()).padStart(2, '0');
+  
+  return `${dia}/${mes}/${ano} ${horas}:${minutos}:${segundos}`;
 }
 
 function cadastrarNovo(){
@@ -1056,7 +1064,7 @@ function salvarEdicaoModal(){
       r.embarque = converterInputParaBR(document.getElementById('modalEmbarque').value);
       r.embarque_full = converterInputParaBR(document.getElementById('modalEmbarqueFull').value);
       r.usuario = getUsuarioAtual();
-      r.ultima_movimentacao = grandma = agoraBR();
+      r.ultima_movimentacao = agoraBR();
 
       enviarParaGoogleSheets(r, "editar"); 
       fecharModal();
