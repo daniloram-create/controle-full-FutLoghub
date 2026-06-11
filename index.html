@@ -266,20 +266,20 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
 <div class="legendas-container">
   <div class="legendas-title">Legenda de Cores do status:</div>
   <div class="legenda-item"><div class="legendas-cor" style="background:#616161"></div> A Processar</div>
-  <div class="legenda-item"><div class="legendas-cor" style="background:#0d97a1"></div> Ag. Reabastecimento</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#0d47a1"></div> Ag. Reabastecimento</div>
   <div class="legenda-item"><div class="legendas-cor" style="background:#b71c1c"></div> Cancelado</div>
   <div class="legenda-item"><div class="legendas-cor" style="background:#4a148c"></div> Apta p/ Separação</div>
-  <div class="legenda-item"><div class="legendas-cor" style="background:#f7cb8d"></div> Em Separação</div>
-  <div class="legenda-item"><div class="legendas-cor" style="background:#0288d1"></div> Separação Concluída</div>
-  <div class="legenda-item"><div class="legendas-cor" style="background:#8d9c0b"></div> Em Conferência</div>
-  <div class="legenda-item"><div class="legendas-cor" style="background:#5ef547"></div> Em Expedição</div>
-  <div class="legenda-item"><div class="legendas-cor" style="background:#f57c00"></div> Em transferência</div>
-  <div class="legenda-item"><div class="legendas-cor" style="background:#b3f2b6"></div> Recebidas HUB SP</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#ffe0b2"></div> Em Separação</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#b3e5fc"></div> Separação Concluída</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#fff9c4"></div> Em Conferência</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#dcedc8"></div> Em Expedição</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#ffcc80"></div> Em transferência</div>
+  <div class="legenda-item"><div class="legendas-cor" style="background:#c8e6c9"></div> Recebidas HUB SP</div>
   <div class="legenda-item"><div class="legendas-cor" style="background:#004d40"></div> Coletado</div>
   <div class="legenda-item"><div class="legendas-cor" style="background:#880e4f"></div> Nota Reagendada</div>
 </div>
 
-<footer>© 2026 Danilo Ramires. Propriedade intelectual do desenvolvedor. Uso autorizado à Operação FutFanatics.</footer>
+<footer>© 2026 Danilo Ramirez. Propriedade intelectual do desenvolvedor. Uso autorizado à Operação FutFanatics.</footer>
 </div>
 
 <div class="modal-overlay" id="permissoesModal">
@@ -496,7 +496,7 @@ function atualizarSelectSetores() {
   select.innerHTML = '';
   SETORES_OPERACIONAIS.forEach(setor => {
     let opt = document.createElement('option');
-    opt.value = sector = setor;
+    opt.value = setor; // CORRIGIDO: Removido typo 'sector'
     opt.textContent = setor;
     select.appendChild(opt);
   });
@@ -688,12 +688,6 @@ function efetuarLogin() {
   }
 }
 
-function fecharLoginErrorModal() {
-  document.getElementById('loginErrorModal').style.display = 'none';
-  document.getElementById('loginPass').value = '';
-  document.getElementById('loginPass').focus();
-}
-
 function efetuarLogout() {
   fecharDropdown();
   sessionStorage.clear();
@@ -731,7 +725,7 @@ function cadastrarNovoUsuarioBD() {
     `Confirma o cadastro do usuário <b>${novoU.toUpperCase()}</b> para o setor <b>${setorS}</b>?`,
     () => {
       USUARIOS_PERMITIDOS[novoU] = { senha: novaS, setor: setorS };
-      enviarParaGoogleSheets({ novoUsuario: novoU, novaSenha: novaS, setor: sectorS }, "salvar_usuario");
+      enviarParaGoogleSheets({ novoUsuario: novoU, novaSenha: novaS, setor: setorS }, "salvar_usuario"); // CORRIGIDO: sectorS para setorS
       
       document.getElementById('admNovoUser').value = '';
       document.getElementById('admNovaSenha').value = '';
@@ -758,7 +752,7 @@ function alterarSenhaUsuarioBD(user) {
   );
 }
 
-function deletarUsuarioBD(user) {
+function deleteUsuarioBD(user) {
   perguntarConfirmacao(
     "🗑️ Remover Usuário",
     `Tem certeza que deseja remover permanentemente o acesso do usuário <b>${user.toUpperCase()}</b>?`,
@@ -789,6 +783,19 @@ function carregarPermissoesDoSheets() {
 
         PERMISSOES_SETORES[setor] = status;
       });
+
+      // NOVO: Garante a atualização em tempo real caso a planilha responda depois do login pronto
+      const uLogado = (sessionStorage.getItem('usuarioLogado') || "").toLowerCase();
+      if (uLogado && USUARIOS_PERMITIDOS[uLogado]) {
+        const divCadastro = document.getElementById('blocoCadastroLote');
+        if (divCadastro) {
+          if (USUARIOS_PERMITIDOS[uLogado].setor === "Administrador" || verificarPermissaoFluxo("Cadastrar Envio")) {
+            divCadastro.style.display = 'block';
+          } else {
+            divCadastro.style.display = 'none';
+          }
+        }
+      }
     })
     .catch(err => console.error("Erro ao carregar permissões:", err));
 }
@@ -819,7 +826,7 @@ function atualizarSelectPermissoes() {
     .filter(setor => setor !== "Administrador")
     .forEach(setor => {
       const opt = document.createElement('option');
-      opt.value = sector = setor;
+      opt.value = setor; // CORRIGIDO: Removido typo 'sector'
       opt.textContent = setor;
       select.appendChild(opt);
     });
@@ -846,7 +853,7 @@ function salvarPermissoesSetor() {
   const selecionados = Array.from(document.querySelectorAll('.check-permissao-status:checked')).map(c => c.value);
 
   PERMISSOES_SETORES[setor] = selecionados;
-  enviarParaGoogleSheets({ setor: sector, status_permitidos: selecionados.join("|") }, "salvar_permissoes");
+  enviarParaGoogleSheets({ setor: setor, status_permitidos: selecionados.join("|") }, "salvar_permissoes"); // CORRIGIDO: sector para setor
   showToast(`Permissões do setor ${setor} salvas!`);
 }
 
@@ -933,11 +940,6 @@ function resetarPaginaERender() { paginaAtual = 1; render(); }
 function agoraBR(){
   const d = new Date();
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-}
-
-function dataHojeBR(){
-  const d = new Date();
-  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
 
 function converterInputParaBR(dataInput) {
@@ -1249,7 +1251,7 @@ function exportarExcel() {
         "AG. REABASTECIMENTO": r.ag_reabastecimento || "-",
         "USUARIO QUE ENVIOU PARA REABASTECIMENTO": r.usuario_que_enviou_para_reabastecimento || "-",
         "EM SEPARAÇÃO": r.em_separacao || "-",
-        "USUARIO QUE LIBEROU A SEPARAÇÃO": r.usuario_que_liberou_a_separaçâo || "-",
+        "USUARIO QUE LIBEROU A SEPARAÇÃO": r.usuario_que_liberou_a_separacao || "-", // CORRIGIDO: Removido caractere especial inválido da propriedade
         "EM CONFERENCIA": r.em_conferencia || "-",
         "USUARIO QUE ENVIOU PARA CONFERENCIA": r.usuario_que_enviou_para_conferencia || "-",
         "EM EXPEDIÇÃO": r.em_expedicao || "-",
