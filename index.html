@@ -176,7 +176,7 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
 </header>
 
 <div class="cards">
-  <div class="card ativo" data-filtro="todos" onclick="setFiltro('todos')"><h2 id="cTotal">0</h2><p>Total</p></div>
+  <div class="card ativo" data-filtro="todos" onclick="setFiltro('todos')"><h2 id="cTotal">0</h2><p>Total de Notas</p></div>
   <div class="card" data-filtro="A processar" onclick="setFiltro('A processar')"><h2 id="cPad">0</h2><p>A Processar</p></div>
   <div class="card" data-filtro="Aguardando Reabastecimento" onclick="setFiltro('Aguardando Reabastecimento')"><h2 id="cRea">0</h2><p>Aguardando reabastecimento</p></div>
   <div class="card" data-filtro="Cancelado" onclick="setFiltro('Cancelado')"><h2 id="cCanc">0</h2><p>Cancelado</p></div>
@@ -457,8 +457,10 @@ const LINHAS_POR_PAGINA = 12;
 let acaoConfirmacaoPendente = null;
 let idxExclusaoPendente = null;
 
+// FOI ADICIONADA A PERMISSÃO DE "Editar Envio" NA LISTA GLOBAL
 const STATUS_PERMISSOES = [
   "Cadastrar Envio",
+  "Editar Envio",
   "Apta para separação",
   "Aguardando Reabastecimento",
   "Cancelado",
@@ -471,7 +473,7 @@ const STATUS_PERMISSOES = [
 ];
 
 let PERMISSOES_SETORES = {
-  "Setor Full": ["Cadastrar Envio", "Apta para separação", "Aguardando Reabastecimento", "Cancelado", "Em separação"],
+  "Setor Full": ["Cadastrar Envio", "Editar Envio", "Apta para separação", "Aguardando Reabastecimento", "Cancelado", "Em separação"],
   "Setor Inventário": ["Em conferência"],
   "Setor Inventario": ["Em conferência"],
   "Setor Expedição": ["Em Expedição", "Em transferência", "Coletado"],
@@ -843,7 +845,7 @@ function renderPermissoesSetor() {
     return `
       <label style="display:flex; align-items:center; gap:8px; padding:9px; border:1px solid #e2e8f0; border-radius:8px; background:#f9fbfd; margin:0;">
         <input type="checkbox" class="check-permissao-status" value="${status}" ${checked} style="width:auto; margin:0;">
-        <span style="${status === 'Cadastrar Envio' ? 'color:#192C53; font-weight:bold;' : ''}">${status}</span>
+        <span style="${(status === 'Cadastrar Envio' || status === 'Editar Envio') ? 'color:#192C53; font-weight:bold;' : ''}">${status}</span>
       </label>
     `;
   }).join('');
@@ -856,6 +858,7 @@ function salvarPermissoesSetor() {
   PERMISSOES_SETORES[setor] = selecionados;
   enviarParaGoogleSheets({ setor: setor, status_permitidos: selecionados.join("|") }, "salvar_permissoes");
   showToast(`Permissões do setor ${setor} salvas!`);
+  resetarPaginaERender(); // Rerenderiza os botões do usuário caso ele seja o próprio afetado
 }
 
 function verificarPermissaoFluxo(statusDestino) {
@@ -961,20 +964,15 @@ function converterBRParaInput(dataBR) {
 // CORRIGIDO PARA CONVERTER O ISO COM HORAS, MINUTOS E SEGUNDOS
 function formatarDataEHora(valor) {
   if (!valor || valor.trim() === "" || valor === "-") return "-";
-  
   if (/^\d{2}\/\d{2}\/\d{4}/.test(valor)) return valor; 
-  
   const d = new Date(valor);
-  
   if (isNaN(d.getTime())) return valor;
-  
   const dia = String(d.getDate()).padStart(2, '0');
   const mes = String(d.getMonth() + 1).padStart(2, '0');
   const ano = d.getFullYear();
   const horas = String(d.getHours()).padStart(2, '0');
   const minutos = String(d.getMinutes()).padStart(2, '0');
   const segundos = String(d.getSeconds()).padStart(2, '0');
-  
   return `${dia}/${mes}/${ano} ${horas}:${minutos}:${segundos}`;
 }
 
@@ -1022,8 +1020,12 @@ function cadastrarNovo(){
   showToast("Novo lote adicionado como 'A processar'!");
 }
 
+// ADICIONADA A VERIFICAÇÃO DE PERMISSÃO "Editar Envio" NA FUNÇÃO ABAIXO
 function editar(idx){
-  if(getSetorAtual() !== "Administrador") { showToast("Apenas administradores podem editar registros.", "danger"); return; }
+  if(getSetorAtual() !== "Administrador" && !verificarPermissaoFluxo("Editar Envio")) { 
+    showToast("Seu setor não possui permissão para editar envios.", "danger"); 
+    return; 
+  }
   const r = registros[idx];
   document.getElementById('modalId').value       = idx;
   document.getElementById('modalEnvio').value    = r.envio || '';
@@ -1292,6 +1294,7 @@ function proximaPagina() {
 }
 function irParaPagina(num) { paginaAtual = num; render(); }
 
+// ADICIONADA A VERIFICAÇÃO DINÂMICA DE BOTÕES POR PERMISSÃO NA RENDERIZAÇÃO
 function render(){
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
@@ -1362,36 +1365,39 @@ function render(){
     }
 
     let bAcao = '';
+    
     if(r.status === 'A processar') {
       bAcao = `
-        <button title="Mudar status para Apta para Separação" style="background:#4a148c" onclick="avancarEsteira(${r.originalIdx}, 'Apta para separação')">✔️ Apta para separação</button>
-        <button title="Colocar lote em espera por Reabastecimento" style="background:#0d47a1" onclick="avancarEsteira(${r.originalIdx}, 'Aguardando Reabastecimento')">⏳ Ag. Reabastecimento</button>
-        <button title="Cancelar Envio definitivamente" style="background:#b71c1c" onclick="avancarEsteira(${r.originalIdx}, 'Cancelado')">❌ Cancelado</button>
+        ${verificarPermissaoFluxo('Apta para separação') ? `<button title="Mudar status para Apta para Separação" style="background:#4a148c" onclick="avancarEsteira(${r.originalIdx}, 'Apta para separação')">✔️ Apta para separação</button>` : ''}
+        ${verificarPermissaoFluxo('Aguardando Reabastecimento') ? `<button title="Colocar lote em espera por Reabastecimento" style="background:#0d47a1" onclick="avancarEsteira(${r.originalIdx}, 'Aguardando Reabastecimento')">⏳ Ag. Reabastecimento</button>` : ''}
+        ${verificarPermissaoFluxo('Cancelado') ? `<button title="Cancelar Envio definitivamente" style="background:#b71c1c" onclick="avancarEsteira(${r.originalIdx}, 'Cancelado')">❌ Cancelado</button>` : ''}
       `;
     } else if(r.status === 'Nota reagendada') {
-      bAcao = `<button title="Encerrar fluxo com a entrega efetuada" style="background:#004d40" onclick="avancarEsteira(${r.originalIdx}, 'Coletado')">🚀 Coletado</button>`;
+      bAcao = verificarPermissaoFluxo('Coletado') ? `<button title="Encerrar fluxo com a entrega efetuada" style="background:#004d40" onclick="avancarEsteira(${r.originalIdx}, 'Coletado')">🚀 Coletado</button>` : '';
     } else if(r.status === 'Aguardando Reabastecimento' || r.status === 'Cancelado') {
-      bAcao = `<button title="Retornar para esteira de Separação" style="background:#4a148c" onclick="avancarEsteira(${r.originalIdx}, 'Apta para separação')">✔️ Apta para separação</button>`;
+      bAcao = verificarPermissaoFluxo('Apta para separação') ? `<button title="Retornar para esteira de Separação" style="background:#4a148c" onclick="avancarEsteira(${r.originalIdx}, 'Apta para separação')">✔️ Apta para separação</button>` : '';
     } else if(r.status === 'Apta para separação') {
-      bAcao = `<button title="Iniciar o processo de separação de mercadorias" style="background:#e65100" onclick="avancarEsteira(${r.originalIdx}, 'Em separação')">📑 Em separação</button>`;
+      bAcao = verificarPermissaoFluxo('Em separação') ? `<button title="Iniciar o processo de separação de mercadorias" style="background:#e65100" onclick="avancarEsteira(${r.originalIdx}, 'Em separação')">📑 Em separação</button>` : '';
     } else if(r.status === 'Em separação') {
-      let bInt = r.sep_interna==='Pendente' ? `<button title="Concluir a Separação Interna do Lote" style="background:#0288d1; font-size:9px;" onclick="alterarSubSeparacao(${r.originalIdx}, 'interna')"> Separação Interna Fin.</button>` : '';
-      let bExt = r.sep_externa==='Pendente' ? `<button title="Concluir a Separação Externa do Lote" style="background:#512da8; font-size:9px;" onclick="alterarSubSeparacao(${r.originalIdx}, 'externa')"> Separação Externa Fin.</button>` : '';
-      bAcao = bInt + bExt;
+      if(verificarPermissaoFluxo('Em separação')) {
+        let bInt = r.sep_interna==='Pendente' ? `<button title="Concluir a Separação Interna do Lote" style="background:#0288d1; font-size:9px;" onclick="alterarSubSeparacao(${r.originalIdx}, 'interna')"> Separação Interna Fin.</button>` : '';
+        let bExt = r.sep_externa==='Pendente' ? `<button title="Concluir a Separação Externa do Lote" style="background:#512da8; font-size:9px;" onclick="alterarSubSeparacao(${r.originalIdx}, 'externa')"> Separação Externa Fin.</button>` : '';
+        bAcao = bInt + bExt;
+      }
     } else if(r.status === 'Separação Concluída') {
-      bAcao = `<button title="Enviar para auditoria e conferência" style="background:#f57f17; color:#111" onclick="avancarEsteira(${r.originalIdx}, 'Em conferência')">🔍 Em conferência</button>`;
+      bAcao = verificarPermissaoFluxo('Em conferência') ? `<button title="Enviar para auditoria e conferência" style="background:#f57f17; color:#111" onclick="avancarEsteira(${r.originalIdx}, 'Em conferência')">🔍 Em conferência</button>` : '';
     } else if(r.status === 'Em conferência') {
-      bAcao = `<button title="Enviar para a doca de expedição" style="background:#33691e" onclick="avancarEsteira(${r.originalIdx}, 'Em Expedição')"> 📦 Em Expedição</button>`;
+      bAcao = verificarPermissaoFluxo('Em Expedição') ? `<button title="Enviar para a doca de expedição" style="background:#33691e" onclick="avancarEsteira(${r.originalIdx}, 'Em Expedição')"> 📦 Em Expedição</button>` : '';
     } else if(r.status === 'Em Expedição') {
       if(r.destino === "Presidente Prudente") {
-         bAcao = `<button title="Lote com destino Próprio: Finalizar direto como Coletado" style="background:#004d40" onclick="avancarEsteira(${r.originalIdx}, 'Coletado')">🚀 Coletado</button>`;
+         bAcao = verificarPermissaoFluxo('Coletado') ? `<button title="Lote com destino Próprio: Finalizar direto como Coletado" style="background:#004d40" onclick="avancarEsteira(${r.originalIdx}, 'Coletado')">🚀 Coletado</button>` : '';
       } else {
-         bAcao = `<button title="Despachar mercadoria rumo ao HUB em São Paulo" style="background:#f57c00" onclick="avancarEsteira(${r.originalIdx}, 'Em transferência')">🚚 Em transferência</button>`;
+         bAcao = verificarPermissaoFluxo('Em transferência') ? `<button title="Despachar mercadoria rumo ao HUB em São Paulo" style="background:#f57c00" onclick="avancarEsteira(${r.originalIdx}, 'Em transferência')">🚚 Em transferência</button>` : '';
       }
     } else if(r.status === 'Em transferência') {
-      bAcao = `<button title="Confirmar recebimento das mercadorias na filial HUB SP" style="background:#2e7d32" onclick="avancarEsteira(${r.originalIdx}, 'Recebidas HUB SP')">🏢 Recebidas HUB SP</button>`;
+      bAcao = verificarPermissaoFluxo('Recebidas HUB SP') ? `<button title="Confirmar recebimento das mercadorias na filial HUB SP" style="background:#2e7d32" onclick="avancarEsteira(${r.originalIdx}, 'Recebidas HUB SP')">🏢 Recebidas HUB SP</button>` : '';
     } else if(r.status === 'Recebidas HUB SP') {
-      bAcao = `<button title="Encerrar fluxo com a entrega efetuada" style="background:#004d40" onclick="avancarEsteira(${r.originalIdx}, 'Coletado')">🚀 Coletado</button>`;
+      bAcao = verificarPermissaoFluxo('Coletado') ? `<button title="Encerrar fluxo com a entrega efetuada" style="background:#004d40" onclick="avancarEsteira(${r.originalIdx}, 'Coletado')">🚀 Coletado</button>` : '';
     }
 
     let badgeStyle = 'badge-default';
@@ -1410,6 +1416,8 @@ function render(){
     let cInt = r.sep_interna === 'Finalizada' ? 'sep-finalizada' : 'sep-pendente';
     let cExt = r.sep_externa === 'Finalizada' ? 'sep-finalizada' : 'sep-pendente';
 
+    const btnEditar = verificarPermissaoFluxo('Editar Envio') ? `<button class="btn-edit" title="Editar propriedades cadastrais" onclick="editar(${r.originalIdx})">✏️Editar  </button>` : '';
+
     tr.innerHTML = `
       <td><b>${r.envio||'-'}</b></td>
       <td>${r.nf||'-'}</td>
@@ -1426,7 +1434,7 @@ function render(){
       <td class="actions">
         ${bAcao}
         <div class="actions-adm">
-          <button class="btn-edit" title="Editar propriedades cadastrais" onclick="editar(${r.originalIdx})">✏️Editar  </button>
+          ${btnEditar}
           <button class="btn-del" title="Apagar permanentemente" onclick="excluir(${r.originalIdx})">🗑Excluir </button>
         </div>
       </td>`;
