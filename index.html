@@ -194,7 +194,7 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
 
 <div id="loadingStatus" class="loading-status">🔄 Conectando ao Banco de Dados...</div>
 
-<div class="form-box" id="blocoCadastroLote">
+<div class="form-box" id="blocoCadastroLote" style="display: none;">
   <h3 style="color:#192C53;margin-bottom:10px;">Novo Cadastro de Envio</h3>
   <div class="form-grid">
     <div><label>Número Envio Full</label><input id="fEnvio" placeholder="Nº do envio"></div>
@@ -230,7 +230,8 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
       <input type="date" id="filtroDataFim" onchange="resetarPaginaERender()" style="margin:0;">
     </div>
     <div style="flex-grow: 1;"></div>
-    <div>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn-exportar" style="background:#2a7ab0; margin:0;" onclick="carregarDadosDoGoogleSheets()">🔄 Atualizar Banco</button>
       <button class="btn-exportar" style="background:#27ae60; margin:0;" onclick="exportarExcel()">📊 Baixar Excel</button>
     </div>
   </div>
@@ -456,7 +457,9 @@ const LINHAS_POR_PAGINA = 12;
 let acaoConfirmacaoPendente = null;
 let idxExclusaoPendente = null;
 
+// ADICIONADO "CADASTRAR ENVIO" NA MATRIZ DE CONFIGURAÇÕES DE ACESSO
 const STATUS_PERMISSOES = [
+  "Cadastrar Envio",
   "Apta para separação",
   "Aguardando Reabastecimento",
   "Cancelado",
@@ -469,7 +472,7 @@ const STATUS_PERMISSOES = [
 ];
 
 let PERMISSOES_SETORES = {
-  "Setor Full": ["Apta para separação", "Aguardando Reabastecimento", "Cancelado", "Em separação"],
+  "Setor Full": ["Cadastrar Envio", "Apta para separação", "Aguardando Reabastecimento", "Cancelado", "Em separação"],
   "Setor Inventário": ["Em conferência"],
   "Setor Inventario": ["Em conferência"],
   "Setor Expedição": ["Em Expedição", "Em transferência", "Coletado"],
@@ -493,7 +496,7 @@ function atualizarSelectSetores() {
   select.innerHTML = '';
   SETORES_OPERACIONAIS.forEach(setor => {
     let opt = document.createElement('option');
-    opt.value = setor;
+    opt.value = sector = setor;
     opt.textContent = setor;
     select.appendChild(opt);
   });
@@ -666,15 +669,16 @@ function efetuarLogin() {
     if (USUARIOS_PERMITIDOS[u].setor === "Administrador") {
       document.getElementById('gearAdmin').style.display = 'block';
       document.getElementById('gearPermissoes').style.display = 'block';
-      document.getElementById('blocoCadastroLote').style.display = 'block';
     } else {
       document.getElementById('gearAdmin').style.display = 'none';
       document.getElementById('gearPermissoes').style.display = 'none';
-      if(USUARIOS_PERMITIDOS[u].setor !== "Setor Full") {
-         document.getElementById('blocoCadastroLote').style.display = 'none';
-      } else {
-         document.getElementById('blocoCadastroLote').style.display = 'block';
-      }
+    }
+    
+    // VALIDAÇÃO DINÂMICA DO CAMPO DE CADASTRO BASEADO NAS PERMISSÕES DO SETOR
+    if (USUARIOS_PERMITIDOS[u].setor === "Administrador" || verificarPermissaoFluxo("Cadastrar Envio")) {
+       document.getElementById('blocoCadastroLote').style.display = 'block';
+    } else {
+       document.getElementById('blocoCadastroLote').style.display = 'none';
     }
     
     showToast(`Bem-vindo, ${u.toUpperCase()}!`);
@@ -727,7 +731,7 @@ function cadastrarNovoUsuarioBD() {
     `Confirma o cadastro do usuário <b>${novoU.toUpperCase()}</b> para o setor <b>${setorS}</b>?`,
     () => {
       USUARIOS_PERMITIDOS[novoU] = { senha: novaS, setor: setorS };
-      enviarParaGoogleSheets({ novoUsuario: novoU, novaSenha: novaS, setor: setorS }, "salvar_usuario");
+      enviarParaGoogleSheets({ novoUsuario: novoU, novaSenha: novaS, setor: sectorS }, "salvar_usuario");
       
       document.getElementById('admNovoUser').value = '';
       document.getElementById('admNovaSenha').value = '';
@@ -738,12 +742,8 @@ function cadastrarNovoUsuarioBD() {
   );
 }
 
-// ========== FUNÇÕES INSERIDAS PARA EDITAR E EXCLUIR USUÁRIOS ========== //
-
 function alterarSenhaUsuarioBD(user) {
   const novaSenha = prompt(`Digite a nova senha para o usuário ${user.toUpperCase()}:`);
-  
-  // Cancela se o usuário clicar em Cancelar ou deixar em branco
   if (novaSenha === null || novaSenha.trim() === "") return;
   
   perguntarConfirmacao(
@@ -751,7 +751,6 @@ function alterarSenhaUsuarioBD(user) {
     `Confirma a alteração de senha do usuário <b>${user.toUpperCase()}</b>?`,
     () => {
       USUARIOS_PERMITIDOS[user].senha = novaSenha.trim();
-      // Envia os dados para a planilha usando a mesma ação de salvar usuário para atualizar
       enviarParaGoogleSheets({ novoUsuario: user, novaSenha: novaSenha.trim(), setor: USUARIOS_PERMITIDOS[user].setor }, "salvar_usuario");
       renderUsuariosAdmin();
       showToast(`Senha do usuário ${user.toUpperCase()} alterada com sucesso!`);
@@ -771,8 +770,6 @@ function deletarUsuarioBD(user) {
     }
   );
 }
-
-// ====================================================================== //
 
 function carregarPermissoesDoSheets() {
   if (!SCRIPT_URL || SCRIPT_URL.startsWith("SUA_NOVA_SCRIPT")) return;
@@ -822,7 +819,7 @@ function atualizarSelectPermissoes() {
     .filter(setor => setor !== "Administrador")
     .forEach(setor => {
       const opt = document.createElement('option');
-      opt.value = setor;
+      opt.value = sector = setor;
       opt.textContent = setor;
       select.appendChild(opt);
     });
@@ -838,7 +835,7 @@ function renderPermissoesSetor() {
     return `
       <label style="display:flex; align-items:center; gap:8px; padding:9px; border:1px solid #e2e8f0; border-radius:8px; background:#f9fbfd; margin:0;">
         <input type="checkbox" class="check-permissao-status" value="${status}" ${checked} style="width:auto; margin:0;">
-        <span>${status}</span>
+        <span style="${status === 'Cadastrar Envio' ? 'color:#192C53; font-weight:bold;' : ''}">${status}</span>
       </label>
     `;
   }).join('');
@@ -849,11 +846,10 @@ function salvarPermissoesSetor() {
   const selecionados = Array.from(document.querySelectorAll('.check-permissao-status:checked')).map(c => c.value);
 
   PERMISSOES_SETORES[setor] = selecionados;
-  enviarParaGoogleSheets({ setor: setor, status_permitidos: selecionados.join("|") }, "salvar_permissoes");
+  enviarParaGoogleSheets({ setor: sector, status_permitidos: selecionados.join("|") }, "salvar_permissoes");
   showToast(`Permissões do setor ${setor} salvas!`);
 }
 
-// MATRIZ RESTRETA DE ACESSOS E ETAPAS POR SETOR OPERACIONAL
 function verificarPermissaoFluxo(statusDestino) {
   const setor = getSetorAtual();
   if(setor === "Administrador") return true;
@@ -881,7 +877,6 @@ function carregarDadosDoGoogleSheets() {
           r.embarque_full = formatarDataEHora(r.embarque_full);
           r.ultima_movimentacao = formatarDataEHora(r.ultima_movimentacao);
           
-          // Tratamento preventivo das novas colunas de auditoria
           r.id = r.id || '';
           r.usuario_que_cadastrou = r.usuario_que_cadastrou || r.usuario || '-';
           r.usuario_que_finalizou_interna = r.usuario_que_finalizou_interna || '';
@@ -1046,7 +1041,6 @@ function salvarEdicaoModal(){
       const novaDataColeta = converterInputParaBR(document.getElementById('modalColeta').value);
       const statusSelecionado = document.getElementById('modalStatus').value;
       
-      // Lógica de reagendamento: altera o status se a data for diferente da original
       if (r.coleta && r.coleta !== "-" && r.coleta !== novaDataColeta) {
           r.status = 'Nota reagendada';
       } else {
@@ -1082,7 +1076,6 @@ function avancarEsteira(idx, proximoStatus) {
       r.usuario = getUsuarioAtual();
       r.ultima_movimentacao = agoraBR();
       
-      // ALIMENTAÇÃO DINÂMICA DAS COLUNAS DE AUDITORIA DE CADA CARD DO KANBAN
       if (proximoStatus === 'Apta para separação') {
          r.status_apta_para_separacao = agoraBR();
          r.usuario_que_colocou_apta = getUsuarioAtual();
@@ -1222,13 +1215,11 @@ function obterRegistrosFiltrados() {
     return !(termo && !blob.includes(termo));
   });
 
-  // Ordena para que os agendamentos mais próximos (menor distância de dias) apareçam primeiro
   filtrados.sort((a, b) => diasAteColeta(a.coleta) - diasAteColeta(b.coleta));
 
   return filtrados;
 }
 
-// MAPEAMENTO COMPLETO DE DOWNLOAD CONTENDO AS 31 COLUNAS DA PLANILHA DO SHEETS
 function exportarExcel() {
   const filtrados = obterRegistrosFiltrados();
   if(filtrados.length === 0) { showToast("Nenhum dado para exportar.", "danger"); return; }
@@ -1258,7 +1249,7 @@ function exportarExcel() {
         "AG. REABASTECIMENTO": r.ag_reabastecimento || "-",
         "USUARIO QUE ENVIOU PARA REABASTECIMENTO": r.usuario_que_enviou_para_reabastecimento || "-",
         "EM SEPARAÇÃO": r.em_separacao || "-",
-        "USUARIO QUE LIBEROU A SEPARAÇÃO": r.usuario_que_liberou_a_separacao || "-",
+        "USUARIO QUE LIBEROU A SEPARAÇÃO": r.usuario_que_liberou_a_separaçâo || "-",
         "EM CONFERENCIA": r.em_conferencia || "-",
         "USUARIO QUE ENVIOU PARA CONFERENCIA": r.usuario_que_enviou_para_conferencia || "-",
         "EM EXPEDIÇÃO": r.em_expedicao || "-",
@@ -1358,12 +1349,14 @@ function render(){
     }
 
     let bAcao = '';
-    if(r.status === 'A processar' || r.status === 'Nota reagendada') {
+    if(r.status === 'A processar') {
       bAcao = `
         <button title="Mudar status para Apta para Separação" style="background:#4a148c" onclick="avancarEsteira(${r.originalIdx}, 'Apta para separação')">✔️ Apta para separação</button>
         <button title="Colocar lote em espera por Reabastecimento" style="background:#0d47a1" onclick="avancarEsteira(${r.originalIdx}, 'Aguardando Reabastecimento')">⏳ Ag. Reabastecimento</button>
         <button title="Cancelar Envio definitivamente" style="background:#b71c1c" onclick="avancarEsteira(${r.originalIdx}, 'Cancelado')">❌ Cancelado</button>
       `;
+    } else if(r.status === 'Nota reagendada') {
+      bAcao = `<button title="Encerrar fluxo com a entrega efetuada" style="background:#004d40" onclick="avancarEsteira(${r.originalIdx}, 'Coletado')">🚀 Coletado</button>`;
     } else if(r.status === 'Aguardando Reabastecimento' || r.status === 'Cancelado') {
       bAcao = `<button title="Retornar para esteira de Separação" style="background:#4a148c" onclick="avancarEsteira(${r.originalIdx}, 'Apta para separação')">✔️ Apta para separação</button>`;
     } else if(r.status === 'Apta para separação') {
