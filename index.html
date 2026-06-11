@@ -318,7 +318,7 @@ footer{text-align:center;padding:15px;color:#666;font-size:13px}
         <div>
           <label>Setor</label>
           <select id="admNovoSetor" style="padding:6px; margin:5px 0; width:100%;">
-            </select>
+          </select>
         </div>
         <div>
           <button style="width: 100%; margin: 0; background: #27ae60; padding:8px;" onclick="cadastrarNovoUsuarioBD()">Autorizar</button>
@@ -443,8 +443,8 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbygvvQC-fAdO_Rq2OAa7
 
 // BANCO DE USUÁRIOS COM MATRIZ DE SETORES PARAMETRIZADA
 let USUARIOS_PERMITIDOS = {
-  "danilo": { senha: "123", setor: "Administrador" },
-  "admin": { senha: "futfanatics", setor: "Administrador" }
+  "danilo": { senha: "123", sector: "Administrador" },
+  "admin": { senha: "futfanatics", sector: "Administrador" }
 };
 
 // SETORES HOMOLOGADOS OPERACIONAIS
@@ -457,7 +457,6 @@ const LINHAS_POR_PAGINA = 12;
 let acaoConfirmacaoPendente = null;
 let idxExclusaoPendente = null;
 
-// ADICIONADO "CADASTRAR ENVIO" NA MATRIZ DE CONFIGURAÇÕES DE ACESSO
 const STATUS_PERMISSOES = [
   "Cadastrar Envio",
   "Apta para separação",
@@ -496,7 +495,7 @@ function atualizarSelectSetores() {
   select.innerHTML = '';
   SETORES_OPERACIONAIS.forEach(setor => {
     let opt = document.createElement('option');
-    opt.value = setor; // CORRIGIDO: Removido typo 'sector'
+    opt.value = setor;
     opt.textContent = setor;
     select.appendChild(opt);
   });
@@ -674,7 +673,6 @@ function efetuarLogin() {
       document.getElementById('gearPermissoes').style.display = 'none';
     }
     
-    // VALIDAÇÃO DINÂMICA DO CAMPO DE CADASTRO BASEADO NAS PERMISSÕES DO SETOR
     if (USUARIOS_PERMITIDOS[u].setor === "Administrador" || verificarPermissaoFluxo("Cadastrar Envio")) {
        document.getElementById('blocoCadastroLote').style.display = 'block';
     } else {
@@ -686,6 +684,11 @@ function efetuarLogin() {
   } else {
     document.getElementById('loginErrorModal').style.display = 'flex';
   }
+}
+
+// NOVA FUNÇÃO: FECHAR MODAL DE ACESSO NEGADO
+function fecharLoginErrorModal() {
+  document.getElementById('loginErrorModal').style.display = 'none';
 }
 
 function efetuarLogout() {
@@ -725,7 +728,7 @@ function cadastrarNovoUsuarioBD() {
     `Confirma o cadastro do usuário <b>${novoU.toUpperCase()}</b> para o setor <b>${setorS}</b>?`,
     () => {
       USUARIOS_PERMITIDOS[novoU] = { senha: novaS, setor: setorS };
-      enviarParaGoogleSheets({ novoUsuario: novoU, novaSenha: novaS, setor: setorS }, "salvar_usuario"); // CORRIGIDO: sectorS para setorS
+      enviarParaGoogleSheets({ novoUsuario: novoU, novaSenha: novaS, setor: setorS }, "salvar_usuario");
       
       document.getElementById('admNovoUser').value = '';
       document.getElementById('admNovaSenha').value = '';
@@ -752,7 +755,8 @@ function alterarSenhaUsuarioBD(user) {
   );
 }
 
-function deleteUsuarioBD(user) {
+// CORRIGIDO: Nome alterado de deleteUsuarioBD para deletarUsuarioBD combinando com o botão
+function deletarUsuarioBD(user) {
   perguntarConfirmacao(
     "🗑️ Remover Usuário",
     `Tem certeza que deseja remover permanentemente o acesso do usuário <b>${user.toUpperCase()}</b>?`,
@@ -784,7 +788,6 @@ function carregarPermissoesDoSheets() {
         PERMISSOES_SETORES[setor] = status;
       });
 
-      // NOVO: Garante a atualização em tempo real caso a planilha responda depois do login pronto
       const uLogado = (sessionStorage.getItem('usuarioLogado') || "").toLowerCase();
       if (uLogado && USUARIOS_PERMITIDOS[uLogado]) {
         const divCadastro = document.getElementById('blocoCadastroLote');
@@ -826,7 +829,7 @@ function atualizarSelectPermissoes() {
     .filter(setor => setor !== "Administrador")
     .forEach(setor => {
       const opt = document.createElement('option');
-      opt.value = setor; // CORRIGIDO: Removido typo 'sector'
+      opt.value = setor;
       opt.textContent = setor;
       select.appendChild(opt);
     });
@@ -853,7 +856,7 @@ function salvarPermissoesSetor() {
   const selecionados = Array.from(document.querySelectorAll('.check-permissao-status:checked')).map(c => c.value);
 
   PERMISSOES_SETORES[setor] = selecionados;
-  enviarParaGoogleSheets({ setor: setor, status_permitidos: selecionados.join("|") }, "salvar_permissoes"); // CORRIGIDO: sector para setor
+  enviarParaGoogleSheets({ setor: setor, status_permitidos: selecionados.join("|") }, "salvar_permissoes");
   showToast(`Permissões do setor ${setor} salvas!`);
 }
 
@@ -914,7 +917,7 @@ function carregarDadosDoGoogleSheets() {
     })
     .catch(err => {
       console.error(err);
-      statusEl.textContent = "⚠️ Simulando estrutura local ou erro de conexão.";
+      statusEl.textContent = "⚠️ Erro de conexão ou dados inválidos.";
       render();
     });
 }
@@ -1053,7 +1056,7 @@ function salvarEdicaoModal(){
       r.embarque = converterInputParaBR(document.getElementById('modalEmbarque').value);
       r.embarque_full = converterInputParaBR(document.getElementById('modalEmbarqueFull').value);
       r.usuario = getUsuarioAtual();
-      r.ultima_movimentacao = agoraBR();
+      r.ultima_movimentacao = grandma = agoraBR();
 
       enviarParaGoogleSheets(r, "editar"); 
       fecharModal();
@@ -1251,7 +1254,7 @@ function exportarExcel() {
         "AG. REABASTECIMENTO": r.ag_reabastecimento || "-",
         "USUARIO QUE ENVIOU PARA REABASTECIMENTO": r.usuario_que_enviou_para_reabastecimento || "-",
         "EM SEPARAÇÃO": r.em_separacao || "-",
-        "USUARIO QUE LIBEROU A SEPARAÇÃO": r.usuario_que_liberou_a_separacao || "-", // CORRIGIDO: Removido caractere especial inválido da propriedade
+        "USUARIO QUE LIBEROU A SEPARAÇÃO": r.em_separacao || "-",
         "EM CONFERENCIA": r.em_conferencia || "-",
         "USUARIO QUE ENVIOU PARA CONFERENCIA": r.usuario_que_enviou_para_conferencia || "-",
         "EM EXPEDIÇÃO": r.em_expedicao || "-",
