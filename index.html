@@ -1230,7 +1230,17 @@ function obterRegistrosFiltrados() {
     return !(termo && !blob.includes(termo));
   });
 
-  filtrados.sort((a, b) => diasAteColeta(a.coleta) - diasAteColeta(b.coleta));
+  filtrados.sort((a, b) => {
+
+  const aColetado = (a.status || '').trim() === 'Coletado';
+  const bColetado = (b.status || '').trim() === 'Coletado';
+
+  if (aColetado && !bColetado) return 1;
+  if (!aColetado && bColetado) return -1;
+
+  return diasAteColeta(a.coleta) - diasAteColeta(b.coleta);
+
+});
 
   return filtrados;
 }
