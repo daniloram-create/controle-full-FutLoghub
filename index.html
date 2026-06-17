@@ -1053,16 +1053,27 @@ function salvarEdicaoModal(){
       r.transportadora = document.getElementById('modalTransp').value;
       r.destino = document.getElementById('modalDestino').value;
       
-      const novaDataColeta = converterInputParaBR(document.getElementById('modalColeta').value);
+      const inputColeta = document.getElementById('modalColeta').value;
+      const novaDataColeta = converterInputParaBR(inputColeta);
       const statusSelecionado = document.getElementById('modalStatus').value;
       
-      if (r.coleta && r.coleta !== "-" && r.coleta !== novaDataColeta) {
-          r.status = 'Nota reagendada';
-      } else {
+      // Pega apenas a data atual (sem as horas) para comparar corretamente com a data do Modal
+      const dataColetaAtualStr = (r.coleta || "").split(" ")[0];
+      
+      if (statusSelecionado !== r.status) {
+          // 1. Se o usuário alterou explicitamente o status na caixa de seleção, mantemos o que ele escolheu.
           r.status = statusSelecionado;
+          r.coleta = novaDataColeta; 
+      } else if (dataColetaAtualStr && dataColetaAtualStr !== "-" && dataColetaAtualStr !== novaDataColeta) {
+          // 2. Se o status continua igual, MAS a data de coleta mudou.
+          r.status = 'Nota reagendada';
+          r.coleta = novaDataColeta;
+      } else {
+          // 3. Se não mudou nem o status nem a data de coleta (pode ter mudado só NF, transportadora, destino)
+          r.status = r.status; 
+          // Mantém a coleta original, não subscreve, para evitar perda da formatação com "horas e minutos" se existir.
       }
       
-      r.coleta = novaDataColeta;
       r.embarque = converterInputParaBR(document.getElementById('modalEmbarque').value);
       r.embarque_full = converterInputParaBR(document.getElementById('modalEmbarqueFull').value);
       r.usuario = getUsuarioAtual();
